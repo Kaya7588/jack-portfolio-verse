@@ -1,28 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AryaOnboarding } from "@/components/arya/AryaOnboarding";
+import { HeroSection } from "@/components/jack/HeroSection";
+import { MarqueeSection } from "@/components/jack/MarqueeSection";
+import { AboutSection } from "@/components/jack/AboutSection";
+import { ServicesSection } from "@/components/jack/ServicesSection";
+import { ProjectsSection } from "@/components/jack/ProjectsSection";
+import { PriceSection } from "@/components/jack/PriceSection";
+import { ContactSection } from "@/components/jack/ContactSection";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Arya Premium — Onboarding" },
+      { title: "Jack — 3D Creator" },
       {
         name: "description",
         content:
-          "Arya Premium onboarding — a premium Telegram Story experience. Choose your language, appearance, and currency.",
+          "Portfolio of Jack, a 3D creator crafting striking and unforgettable projects across branding, motion, and web design.",
       },
-      { property: "og:title", content: "Arya Premium — Onboarding" },
+      { property: "og:title", content: "Jack — 3D Creator" },
       {
         property: "og:description",
-        content: "Premium Telegram Story Experience. Personalize your Arya Premium.",
+        content: "Portfolio of Jack, a 3D creator crafting striking and unforgettable projects across branding, motion, and web design.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "theme-color", content: "#0C0C0C" },
     ],
   }),
   component: Index,
 });
 
 function Index() {
-  return <AryaOnboarding />;
+  return (
+    <main style={{ background: "#0C0C0C", overflowX: "clip", fontFamily: "'Kanit', sans-serif" }}>
+      <HeroSection />
+      <MarqueeSection />
+      <AboutSection />
+      <ServicesSection />
+      <ProjectsSection />
+      <PriceSection />
+      <ContactSection />
+    </main>
+  );
 }
