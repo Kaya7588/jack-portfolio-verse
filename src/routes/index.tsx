@@ -36,6 +36,8 @@ function Index() {
       <AboutSection />
       <ServicesSection />
       <ProjectsSection />
+      <PriceSection />
+      <ContactSection />
     </main>
   );
 }
