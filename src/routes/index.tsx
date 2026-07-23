@@ -4,6 +4,8 @@ import { MarqueeSection } from "@/components/jack/MarqueeSection";
 import { AboutSection } from "@/components/jack/AboutSection";
 import { ServicesSection } from "@/components/jack/ServicesSection";
 import { ProjectsSection } from "@/components/jack/ProjectsSection";
+import { PriceSection } from "@/components/jack/PriceSection";
+import { ContactSection } from "@/components/jack/ContactSection";
 
 export const Route = createFileRoute("/")({
   head: () => ({
