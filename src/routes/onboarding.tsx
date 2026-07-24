@@ -1,11 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { ArrowLeft, Check } from "lucide-react";
-import welcomeImg from "@/assets/arya/welcome.jpg";
-import paymentsImg from "@/assets/arya/payments.jpg";
-import deliveryImg from "@/assets/arya/delivery.jpg";
-import supportImg from "@/assets/arya/support.jpg";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { DICTS, LANG_META, type LangId } from "@/lib/arya-i18n";
+import { SCENES } from "@/components/arya/Scenes";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -23,44 +21,17 @@ export const Route = createFileRoute("/onboarding")({
 
 type Phase = "features" | "language" | "theme" | "currency" | "done";
 
-const STORAGE_KEY = "arya.onboarding.prefs.v1";
+const STORAGE_KEY = "arya.onboarding.prefs.v2";
 
-const FEATURES = [
-  {
-    img: welcomeImg,
-    title: "Welcome to Arya Premium",
-    body: "Your automated store inside Telegram for premium audio and video story series — delivered instantly to your chat.",
-  },
-  {
-    img: paymentsImg,
-    title: "Buy Stories in Minutes",
-    body: "Pay with UPI QR, Crypto, Cards, NetBanking or Wallets. Multi-currency pricing with 10–15 second UTR auto-verification.",
-  },
-  {
-    img: deliveryImg,
-    title: "Instant Telegram Delivery",
-    body: "Episodes land in your own Telegram with lifetime access. Forwarding and downloading stay on, always. (T&C apply)",
-  },
-  {
-    img: supportImg,
-    title: "24/7 Live Support",
-    body: "Real-time chat with dedicated agents and a built-in Story Request portal for missing episodes and series.",
-  },
-];
-
-const LANGUAGES = [
-  { id: "en", label: "English", sub: "Continue in English" },
-  { id: "hi", label: "हिन्दी", sub: "हिन्दी में जारी रखें" },
-];
-
-const THEMES = [
-  { id: "mono", label: "Mono", sub: "Minimal monochrome", swatch: ["#F5F5F5", "#8A8A8A", "#1A1A1A"] },
-  { id: "dark", label: "Dark", sub: "Deep contrast (default)", swatch: ["#0C0C0C", "#7621B0", "#B600A8"] },
-  { id: "cream", label: "Cream", sub: "Soft warm paper", swatch: ["#F5EEDC", "#D9B382", "#6B4A2B"] },
-];
+const THEME_IDS = ["mono", "dark", "cream"] as const;
+type ThemeId = (typeof THEME_IDS)[number];
+const THEME_SWATCHES: Record<ThemeId, string[]> = {
+  mono: ["#F5F5F5", "#8A8A8A", "#1A1A1A"],
+  dark: ["#0C0C0C", "#7621B0", "#B600A8"],
+  cream: ["#F5EEDC", "#D9B382", "#6B4A2B"],
+};
 
 type CurrencyId = "inr" | "usd" | "eur" | "gbp";
-
 const CURRENCIES: {
   id: CurrencyId;
   label: string;
@@ -68,7 +39,6 @@ const CURRENCIES: {
   symbol: string;
   code: string;
   locale: string;
-  // Approximate conversion from a base INR price. Purely illustrative for the preview.
   rateFromInr: number;
 }[] = [
   { id: "inr", label: "INR", sub: "Indian Rupee", symbol: "₹", code: "INR", locale: "en-IN", rateFromInr: 1 },
@@ -77,18 +47,14 @@ const CURRENCIES: {
   { id: "gbp", label: "GBP", sub: "British Pound", symbol: "£", code: "GBP", locale: "en-GB", rateFromInr: 0.0095 },
 ];
 
-// Sample story catalog prices (base INR) — shown in the summary preview.
-const SAMPLE_STORIES = [
-  { name: "Midnight Whisper", tag: "Audio series", inr: 199 },
-  { name: "Neon Rain", tag: "Video series", inr: 499 },
-  { name: "The Last Signal", tag: "Bundle", inr: 899 },
-];
+const SAMPLE_PRICES_INR = [199, 499, 899];
 
-function formatPrice(inr: number, currencyId: string) {
+function formatPrice(inr: number, currencyId: string, lang: LangId) {
   const c = CURRENCIES.find((x) => x.id === currencyId) ?? CURRENCIES[0];
   const value = inr * c.rateFromInr;
+  const localeMap: Record<LangId, string> = { en: c.locale, hi: c.id === "inr" ? "hi-IN" : c.locale, ar: "ar" };
   try {
-    return new Intl.NumberFormat(c.locale, {
+    return new Intl.NumberFormat(localeMap[lang], {
       style: "currency",
       currency: c.code,
       maximumFractionDigits: c.id === "inr" ? 0 : 2,
@@ -103,7 +69,6 @@ function formatPrice(inr: number, currencyId: string) {
 type TgWebApp = {
   ready: () => void;
   expand: () => void;
-  enableClosingConfirmation?: () => void;
   BackButton: { show: () => void; hide: () => void; onClick: (cb: () => void) => void; offClick: (cb: () => void) => void };
   HapticFeedback?: {
     impactOccurred: (style: "light" | "medium" | "heavy" | "rigid" | "soft") => void;
@@ -111,12 +76,10 @@ type TgWebApp = {
     notificationOccurred: (type: "success" | "warning" | "error") => void;
   };
   viewportStableHeight?: number;
-  viewportHeight?: number;
   onEvent?: (ev: string, cb: () => void) => void;
   offEvent?: (ev: string, cb: () => void) => void;
   setHeaderColor?: (c: string) => void;
   setBackgroundColor?: (c: string) => void;
-  colorScheme?: "light" | "dark";
 };
 
 function getTg(): TgWebApp | null {
@@ -125,33 +88,30 @@ function getTg(): TgWebApp | null {
 }
 
 function haptic(kind: "select" | "light" | "medium" | "success") {
-  const tg = getTg();
-  const h = tg?.HapticFeedback;
+  const h = getTg()?.HapticFeedback;
   if (h) {
     if (kind === "select") h.selectionChanged();
     else if (kind === "success") h.notificationOccurred("success");
     else h.impactOccurred(kind);
     return;
   }
-  // Web fallback
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     const map = { select: 8, light: 10, medium: 18, success: [12, 40, 18] } as const;
     try { navigator.vibrate(map[kind] as number | number[]); } catch { /* noop */ }
   }
 }
 
-function loadPrefs(): { lang: string; theme: string; currency: string; completed: boolean } | null {
+type SavedPrefs = { lang: LangId; theme: ThemeId; currency: CurrencyId; completed: boolean };
+
+function loadPrefs(): SavedPrefs | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+    return JSON.parse(raw) as SavedPrefs;
+  } catch { return null; }
 }
-
-function savePrefs(p: { lang: string; theme: string; currency: string; completed: boolean }) {
+function savePrefs(p: SavedPrefs) {
   if (typeof window === "undefined") return;
   try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch { /* noop */ }
 }
@@ -159,53 +119,51 @@ function savePrefs(p: { lang: string; theme: string; currency: string; completed
 function OnboardingPage() {
   const [phase, setPhase] = useState<Phase>("features");
   const [slide, setSlide] = useState(0);
-  const [lang, setLang] = useState<string>("en");
-  const [theme, setTheme] = useState<string>("dark");
-  const [currency, setCurrency] = useState<string>("inr");
+  const [lang, setLang] = useState<LangId>("en");
+  const [theme, setTheme] = useState<ThemeId>("dark");
+  const [currency, setCurrency] = useState<CurrencyId>("inr");
   const [hydrated, setHydrated] = useState(false);
   const [insets, setInsets] = useState({ top: 0, bottom: 0 });
   const [vh, setVh] = useState<number | null>(null);
 
-  // Hydrate saved prefs
+  const t = DICTS[lang];
+  const dir = LANG_META[lang].dir;
+
   useEffect(() => {
     const saved = loadPrefs();
     if (saved) {
-      setLang(saved.lang);
-      setTheme(saved.theme);
-      setCurrency(saved.currency);
+      setLang(saved.lang); setTheme(saved.theme); setCurrency(saved.currency);
       if (saved.completed) setPhase("done");
     }
     setHydrated(true);
   }, []);
 
-  // Persist on change (only after hydrate to avoid clobbering)
   useEffect(() => {
     if (!hydrated) return;
     savePrefs({ lang, theme, currency, completed: phase === "done" });
   }, [lang, theme, currency, phase, hydrated]);
 
-  // Telegram WebApp init
+  // Apply document dir for RTL
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dir = dir;
+    document.documentElement.lang = lang;
+    return () => { document.documentElement.dir = "ltr"; };
+  }, [dir, lang]);
+
   useEffect(() => {
     const tg = getTg();
-    if (!tg) {
-      // Web safe-area fallback via env()
-      return;
-    }
+    if (!tg) return;
     try {
-      tg.ready();
-      tg.expand();
-      tg.setHeaderColor?.("#0C0C0C");
-      tg.setBackgroundColor?.("#0C0C0C");
+      tg.ready(); tg.expand();
+      tg.setHeaderColor?.("#0C0C0C"); tg.setBackgroundColor?.("#0C0C0C");
       if (tg.viewportStableHeight) setVh(tg.viewportStableHeight);
-      const onVp = () => {
-        if (tg.viewportStableHeight) setVh(tg.viewportStableHeight);
-      };
+      const onVp = () => { if (tg.viewportStableHeight) setVh(tg.viewportStableHeight); };
       tg.onEvent?.("viewportChanged", onVp);
       return () => { tg.offEvent?.("viewportChanged", onVp); };
     } catch { /* noop */ }
   }, []);
 
-  // CSS env() safe-area detection
   useEffect(() => {
     const read = () => {
       const probe = document.createElement("div");
@@ -222,33 +180,28 @@ function OnboardingPage() {
     return () => window.removeEventListener("resize", read);
   }, []);
 
+  const featCount = t.features.length;
+
   const goBack = useCallback(() => {
     haptic("light");
-    if (phase === "features") {
-      if (slide > 0) setSlide(slide - 1);
-      return;
-    }
-    if (phase === "language") { setPhase("features"); setSlide(FEATURES.length - 1); return; }
+    if (phase === "features") { if (slide > 0) setSlide(slide - 1); return; }
+    if (phase === "language") { setPhase("features"); setSlide(featCount - 1); return; }
     if (phase === "theme") { setPhase("language"); return; }
     if (phase === "currency") { setPhase("theme"); return; }
     if (phase === "done") { setPhase("currency"); return; }
-  }, [phase, slide]);
+  }, [phase, slide, featCount]);
+
+  const goNextFromFeatures = useCallback(() => { haptic("medium"); setPhase("language"); }, []);
 
   const advance = useCallback(() => {
     haptic("medium");
-    if (phase === "features") {
-      if (slide < FEATURES.length - 1) setSlide(slide + 1);
-      else setPhase("language");
-      return;
-    }
     if (phase === "language") return setPhase("theme");
     if (phase === "theme") return setPhase("currency");
     if (phase === "currency") { haptic("success"); return setPhase("done"); }
-  }, [phase, slide]);
+  }, [phase]);
 
   const canBack = !(phase === "features" && slide === 0);
 
-  // Telegram BackButton wiring
   useEffect(() => {
     const tg = getTg();
     if (!tg?.BackButton) return;
@@ -257,12 +210,12 @@ function OnboardingPage() {
     return () => { tg.BackButton.offClick(goBack); };
   }, [canBack, goBack]);
 
-  const showSkip = phase !== "done";
-
   const minH = vh ? `${vh}px` : "100dvh";
+  const BackIcon = dir === "rtl" ? ArrowRight : ArrowLeft;
 
   return (
     <div
+      dir={dir}
       className="relative w-full flex justify-center"
       style={{
         minHeight: minH,
@@ -274,104 +227,102 @@ function OnboardingPage() {
       }}
     >
       <div className="relative w-full max-w-[440px] flex flex-col px-6 pt-6 pb-8" style={{ overflowX: "clip", minHeight: `calc(${minH} - ${insets.top + insets.bottom}px)` }}>
-        {/* Top bar */}
+        {/* Top bar — no title, back + skip only */}
         <div className="flex items-center justify-between h-10 shrink-0 relative z-20">
           <button
             onClick={goBack}
             disabled={!canBack}
-            aria-label="Back"
-            className="h-10 w-10 -ml-2 grid place-items-center rounded-full transition-opacity disabled:opacity-0 disabled:pointer-events-none hover:bg-white/5"
+            aria-label={t.back}
+            className="h-10 w-10 -ms-2 grid place-items-center rounded-full transition-opacity disabled:opacity-0 disabled:pointer-events-none hover:bg-white/5"
           >
-            <ArrowLeft size={22} strokeWidth={2} />
+            <BackIcon size={22} strokeWidth={2} />
           </button>
-          <div className="text-[13px] uppercase tracking-[0.28em] font-light opacity-70">
-            Arya Premium
-          </div>
+          <div />
           <button
             onClick={() => { haptic("light"); setPhase("done"); }}
             className="text-sm font-light opacity-70 hover:opacity-100 transition-opacity px-2"
-            style={{ visibility: showSkip && phase !== "features" ? "visible" : "hidden" }}
+            style={{ visibility: phase !== "features" && phase !== "done" ? "visible" : "hidden" }}
           >
-            Skip
+            {t.skip}
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 flex flex-col mt-2 min-h-0">
           <AnimatePresence mode="wait">
             {phase === "features" && (
-              <FeatureCarousel key="feat" slide={slide} setSlide={setSlide} />
+              <FeatureCarousel
+                key="feat"
+                slide={slide}
+                setSlide={setSlide}
+                onOverflowNext={goNextFromFeatures}
+                features={t.features}
+              />
             )}
             {phase === "language" && (
               <SelectPane
                 key="lang"
-                title="Choose your Language"
-                subtitle="Pick the language you're most comfortable with. You can change this later in Settings."
-                options={LANGUAGES.map((l) => ({ id: l.id, label: l.label, sub: l.sub }))}
+                title={t.langTitle}
+                subtitle={t.langSub}
+                options={(Object.keys(LANG_META) as LangId[]).map((id) => ({
+                  id, label: LANG_META[id].label, sub: LANG_META[id].sub,
+                }))}
                 value={lang}
-                onChange={(v) => { haptic("select"); setLang(v); }}
+                onChange={(v) => { haptic("select"); setLang(v as LangId); }}
               />
             )}
             {phase === "theme" && (
               <SelectPane
                 key="theme"
-                title="Pick your Theme"
-                subtitle="How should Arya Premium look? Applied after onboarding."
-                options={THEMES.map((t) => ({
-                  id: t.id,
-                  label: t.label,
-                  sub: t.sub,
-                  accessory: <ThemeSwatch colors={t.swatch} />,
+                title={t.themeTitle}
+                subtitle={t.themeSub}
+                options={THEME_IDS.map((id) => ({
+                  id,
+                  label: t.themes[id].label,
+                  sub: t.themes[id].sub,
+                  accessory: <ThemeSwatch colors={THEME_SWATCHES[id]} />,
                 }))}
                 value={theme}
-                onChange={(v) => { haptic("select"); setTheme(v); }}
+                onChange={(v) => { haptic("select"); setTheme(v as ThemeId); }}
               />
             )}
             {phase === "currency" && (
               <SelectPane
                 key="cur"
-                title="Select your Currency"
-                subtitle="Prices across the store will show in this currency."
+                title={t.currencyTitle}
+                subtitle={t.currencySub}
                 options={CURRENCIES.map((c) => ({
                   id: c.id,
                   label: c.label,
-                  sub: `${c.sub} — sample ${formatPrice(499, c.id)}`,
+                  sub: `${c.sub} — ${t.sample} ${formatPrice(499, c.id, lang)}`,
                   accessory: <CurrencyGlyph symbol={c.symbol} />,
                 }))}
                 value={currency}
-                onChange={(v) => { haptic("select"); setCurrency(v); }}
+                onChange={(v) => { haptic("select"); setCurrency(v as CurrencyId); }}
               />
             )}
             {phase === "done" && <DonePane key="done" lang={lang} theme={theme} currency={currency} />}
           </AnimatePresence>
         </div>
 
-        {/* Footer */}
         <div className="shrink-0 pt-6 flex flex-col items-center gap-5">
           {phase === "features" && (
-            <ProgressDots count={FEATURES.length} active={slide} onDot={(i) => { haptic("select"); setSlide(i); }} />
+            <ProgressDots count={featCount} active={slide} onDot={(i) => { haptic("select"); setSlide(i); }} />
           )}
 
-          {phase !== "done" ? (
+          {phase === "features" ? (
+            <div className="h-1" />
+          ) : phase !== "done" ? (
             <button
               onClick={advance}
               className="w-full rounded-full py-4 text-base text-white font-medium uppercase tracking-widest"
               style={{
-                background:
-                  "linear-gradient(123deg, #18011F 7%, #B600A8 37%, #7621B0 72%, #BE4C00 100%)",
-                boxShadow:
-                  "0px 4px 4px rgba(181, 1, 167, 0.25), 4px 4px 12px #7721B1 inset",
+                background: "linear-gradient(123deg, #18011F 7%, #B600A8 37%, #7621B0 72%, #BE4C00 100%)",
+                boxShadow: "0px 4px 4px rgba(181, 1, 167, 0.25), 4px 4px 12px #7721B1 inset",
                 outline: "2px solid #ffffff",
                 outlineOffset: "-3px",
               }}
             >
-              {phase === "features"
-                ? slide < FEATURES.length - 1
-                  ? "Next"
-                  : "Get Started"
-                : phase === "currency"
-                ? "Finish"
-                : "Continue"}
+              {phase === "currency" ? t.finish : t.continue}
             </button>
           ) : (
             <button
@@ -383,7 +334,7 @@ function OnboardingPage() {
               }}
               className="w-full rounded-full py-4 text-base font-medium uppercase tracking-widest border-2 border-[#D7E2EA] text-[#D7E2EA] hover:bg-white/5 transition-colors"
             >
-              Restart Onboarding
+              {t.restart}
             </button>
           )}
         </div>
@@ -430,27 +381,33 @@ function ProgressDots({ count, active, onDot }: { count: number; active: number;
   );
 }
 
-function FeatureCarousel({ slide, setSlide }: { slide: number; setSlide: (n: number) => void }) {
+function FeatureCarousel({
+  slide,
+  setSlide,
+  onOverflowNext,
+  features,
+}: {
+  slide: number;
+  setSlide: (n: number) => void;
+  onOverflowNext: () => void;
+  features: { title: string; body: string }[];
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(0);
   const x = useMotionValue(0);
+  const count = features.length;
 
   useEffect(() => {
     if (!containerRef.current) return;
     const el = containerRef.current;
-    const ro = new ResizeObserver(() => {
-      const w = el.getBoundingClientRect().width;
-      setWidth(w);
-    });
+    const ro = new ResizeObserver(() => setWidth(el.getBoundingClientRect().width));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  // Snap x to current slide when slide changes or width changes.
   useEffect(() => {
     if (!width) return;
-    const target = -slide * width;
-    const controls = animate(x, target, { type: "spring", stiffness: 340, damping: 34, mass: 0.9 });
+    const controls = animate(x, -slide * width, { type: "spring", stiffness: 340, damping: 34, mass: 0.9 });
     return () => controls.stop();
   }, [slide, width, x]);
 
@@ -458,16 +415,18 @@ function FeatureCarousel({ slide, setSlide }: { slide: number; setSlide: (n: num
     if (!width) return;
     const threshold = width * 0.22;
     const v = info.velocity.x;
-    let next = slide;
-    if (info.offset.x < -threshold || v < -500) next = Math.min(slide + 1, FEATURES.length - 1);
-    else if (info.offset.x > threshold || v > 500) next = Math.max(slide - 1, 0);
-    if (next !== slide) {
+    // Swipe past last slide → advance phase
+    if (slide === count - 1 && (info.offset.x < -threshold || v < -500)) {
       haptic("light");
-      setSlide(next);
-    } else {
-      // Snap back
       animate(x, -slide * width, { type: "spring", stiffness: 340, damping: 34 });
+      onOverflowNext();
+      return;
     }
+    let next = slide;
+    if (info.offset.x < -threshold || v < -500) next = Math.min(slide + 1, count - 1);
+    else if (info.offset.x > threshold || v > 500) next = Math.max(slide - 1, 0);
+    if (next !== slide) { haptic("light"); setSlide(next); }
+    else animate(x, -slide * width, { type: "spring", stiffness: 340, damping: 34 });
   };
 
   return (
@@ -478,18 +437,18 @@ function FeatureCarousel({ slide, setSlide }: { slide: number; setSlide: (n: num
       transition={{ duration: 0.3 }}
       className="flex-1 flex flex-col min-h-0"
     >
-      <div ref={containerRef} className="flex-1 min-h-0 relative overflow-hidden touch-pan-y">
+      <div ref={containerRef} className="flex-1 min-h-0 relative overflow-hidden touch-pan-y" dir="ltr">
         <motion.div
           className="absolute inset-0 flex"
-          style={{ x, width: `${FEATURES.length * 100}%` }}
+          style={{ x, width: `${count * 100}%` }}
           drag="x"
-          dragConstraints={{ left: -(FEATURES.length - 1) * width, right: 0 }}
-          dragElastic={0.12}
+          dragConstraints={{ left: -(count - 1) * width - width * 0.2, right: width * 0.2 }}
+          dragElastic={0.15}
           dragMomentum={false}
           onDragEnd={onDragEnd}
         >
-          {FEATURES.map((f, i) => (
-            <FeatureSlide key={i} feature={f} index={i} x={x} width={width} />
+          {features.map((f, i) => (
+            <FeatureSlide key={i} feature={f} index={i} x={x} width={width} sceneIndex={i} />
           ))}
         </motion.div>
       </div>
@@ -498,45 +457,24 @@ function FeatureCarousel({ slide, setSlide }: { slide: number; setSlide: (n: num
 }
 
 function FeatureSlide({
-  feature,
-  index,
-  x,
-  width,
+  feature, index, x, width, sceneIndex,
 }: {
-  feature: (typeof FEATURES)[number];
+  feature: { title: string; body: string };
   index: number;
   x: ReturnType<typeof useMotionValue<number>>;
   width: number;
+  sceneIndex: number;
 }) {
-  // Parallax + scale based on distance from center
   const range = width > 0 ? [-(index + 1) * width, -index * width, -(index - 1) * width] : [-1, 0, 1];
   const scale = useTransform(x, range, [0.9, 1, 0.9]);
   const opacity = useTransform(x, range, [0.5, 1, 0.5]);
-  const imgY = useTransform(x, range, [12, 0, 12]);
+  const Scene = SCENES[sceneIndex % SCENES.length];
 
   return (
     <div className="flex-1 min-w-0 h-full flex flex-col px-1" style={{ width: width || undefined }}>
       <motion.div style={{ scale, opacity }} className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 flex items-center justify-center min-h-0 py-4">
-          <div
-            className="relative w-full aspect-square max-w-[340px] rounded-[40px] overflow-hidden"
-            style={{
-              border: "1px solid rgba(215, 226, 234, 0.15)",
-              background:
-                "radial-gradient(120% 100% at 50% 0%, rgba(118,33,176,0.25) 0%, rgba(12,12,12,0) 55%), #0C0C0C",
-              boxShadow: "0 40px 120px -40px rgba(182,0,168,0.35)",
-            }}
-          >
-            <motion.img
-              src={feature.img}
-              alt=""
-              width={768}
-              height={768}
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover"
-              style={{ y: imgY }}
-            />
-          </div>
+          <Scene />
         </div>
         <div className="mt-4 flex flex-col gap-3">
           <h1
@@ -545,10 +483,7 @@ function FeatureSlide({
           >
             {feature.title}
           </h1>
-          <p
-            className="font-light leading-relaxed"
-            style={{ color: "#D7E2EA", opacity: 0.7, fontSize: "0.98rem" }}
-          >
+          <p className="font-light leading-relaxed" style={{ color: "#D7E2EA", opacity: 0.7, fontSize: "0.98rem" }}>
             {feature.body}
           </p>
         </div>
@@ -560,17 +495,9 @@ function FeatureSlide({
 type Option = { id: string; label: string; sub?: string; accessory?: React.ReactNode };
 
 function SelectPane({
-  title,
-  subtitle,
-  options,
-  value,
-  onChange,
+  title, subtitle, options, value, onChange,
 }: {
-  title: string;
-  subtitle: string;
-  options: Option[];
-  value: string;
-  onChange: (v: string) => void;
+  title: string; subtitle: string; options: Option[]; value: string; onChange: (v: string) => void;
 }) {
   return (
     <motion.div
@@ -581,10 +508,7 @@ function SelectPane({
       className="flex-1 flex flex-col min-h-0"
     >
       <div className="pt-6 pb-8 flex flex-col gap-3">
-        <h1
-          className="hero-heading font-black uppercase leading-[0.95] tracking-tight"
-          style={{ fontSize: "clamp(2rem, 9vw, 2.8rem)" }}
-        >
+        <h1 className="hero-heading font-black uppercase leading-[0.95] tracking-tight" style={{ fontSize: "clamp(2rem, 9vw, 2.8rem)" }}>
           {title}
         </h1>
         <p className="font-light leading-relaxed" style={{ color: "#D7E2EA", opacity: 0.65, fontSize: "0.98rem" }}>
@@ -603,7 +527,7 @@ function SelectPane({
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 + i * 0.06, duration: 0.45 }}
-              className="group w-full text-left rounded-3xl p-4 sm:p-5 flex items-center gap-4 transition-all"
+              className="group w-full text-start rounded-3xl p-4 sm:p-5 flex items-center gap-4 transition-all"
               style={{
                 border: `1px solid ${selected ? "rgba(215,226,234,0.7)" : "rgba(215,226,234,0.14)"}`,
                 background: selected
@@ -613,13 +537,9 @@ function SelectPane({
             >
               {o.accessory && <div className="shrink-0">{o.accessory}</div>}
               <div className="flex-1 min-w-0">
-                <div className="font-medium leading-tight" style={{ color: "#D7E2EA", fontSize: "1.05rem" }}>
-                  {o.label}
-                </div>
+                <div className="font-medium leading-tight" style={{ color: "#D7E2EA", fontSize: "1.05rem" }}>{o.label}</div>
                 {o.sub && (
-                  <div className="mt-1 font-light truncate" style={{ color: "#D7E2EA", opacity: 0.55, fontSize: "0.82rem" }}>
-                    {o.sub}
-                  </div>
+                  <div className="mt-1 font-light truncate" style={{ color: "#D7E2EA", opacity: 0.55, fontSize: "0.82rem" }}>{o.sub}</div>
                 )}
               </div>
               <div
@@ -666,19 +586,20 @@ function CurrencyGlyph({ symbol }: { symbol: string }) {
   );
 }
 
-function DonePane({ lang, theme, currency }: { lang: string; theme: string; currency: string }) {
-  const langLabel = LANGUAGES.find((l) => l.id === lang)?.label;
-  const themeLabel = THEMES.find((t) => t.id === theme)?.label;
+function DonePane({ lang, theme, currency }: { lang: LangId; theme: ThemeId; currency: CurrencyId }) {
+  const t = DICTS[lang];
+  const langLabel = LANG_META[lang].label;
+  const themeLabel = t.themes[theme].label;
   const currencyLabel = CURRENCIES.find((c) => c.id === currency)?.label;
   const rows = [
-    { k: "Language", v: langLabel },
-    { k: "Theme", v: themeLabel },
-    { k: "Currency", v: currencyLabel },
+    { k: t.language, v: langLabel },
+    { k: t.theme, v: themeLabel },
+    { k: t.currency, v: currencyLabel },
   ];
 
   const priced = useMemo(
-    () => SAMPLE_STORIES.map((s) => ({ ...s, price: formatPrice(s.inr, currency) })),
-    [currency],
+    () => t.stories.map((s, i) => ({ ...s, price: formatPrice(SAMPLE_PRICES_INR[i] ?? 199, currency, lang) })),
+    [currency, lang, t.stories],
   );
 
   return (
@@ -692,8 +613,7 @@ function DonePane({ lang, theme, currency }: { lang: string; theme: string; curr
       <div
         className="h-20 w-20 rounded-3xl grid place-items-center"
         style={{
-          background:
-            "linear-gradient(123deg, #18011F 7%, #B600A8 37%, #7621B0 72%, #BE4C00 100%)",
+          background: "linear-gradient(123deg, #18011F 7%, #B600A8 37%, #7621B0 72%, #BE4C00 100%)",
           boxShadow: "0 20px 60px -20px rgba(182,0,168,0.6)",
           outline: "2px solid rgba(255,255,255,0.9)",
           outlineOffset: "-3px",
@@ -702,14 +622,11 @@ function DonePane({ lang, theme, currency }: { lang: string; theme: string; curr
         <Check size={36} strokeWidth={2.5} color="#ffffff" />
       </div>
       <div className="flex flex-col gap-3 max-w-[320px]">
-        <h1
-          className="hero-heading font-black uppercase leading-[0.95] tracking-tight"
-          style={{ fontSize: "clamp(1.9rem, 8vw, 2.6rem)" }}
-        >
-          You&apos;re all set
+        <h1 className="hero-heading font-black uppercase leading-[0.95] tracking-tight" style={{ fontSize: "clamp(1.9rem, 8vw, 2.6rem)" }}>
+          {t.doneTitle}
         </h1>
         <p className="font-light leading-relaxed" style={{ color: "#D7E2EA", opacity: 0.7, fontSize: "0.95rem" }}>
-          Welcome to Arya Premium. Your personal audio &amp; video story store is ready inside Telegram.
+          {t.doneBody}
         </p>
       </div>
 
@@ -725,29 +642,19 @@ function DonePane({ lang, theme, currency }: { lang: string; theme: string; curr
         ))}
       </div>
 
-      {/* Sample store prices formatted with the chosen currency */}
       <div
-        className="w-full max-w-[340px] rounded-3xl p-4 flex flex-col gap-2 text-left"
+        className="w-full max-w-[340px] rounded-3xl p-4 flex flex-col gap-2 text-start"
         style={{
           border: "1px solid rgba(215,226,234,0.15)",
-          background:
-            "linear-gradient(140deg, rgba(182,0,168,0.10) 0%, rgba(118,33,176,0.06) 60%, rgba(12,12,12,0) 100%)",
+          background: "linear-gradient(140deg, rgba(182,0,168,0.10) 0%, rgba(118,33,176,0.06) 60%, rgba(12,12,12,0) 100%)",
         }}
       >
         <div className="flex items-center justify-between px-1 pb-1">
-          <span className="uppercase tracking-widest font-light text-xs" style={{ opacity: 0.6 }}>
-            Store preview
-          </span>
-          <span className="uppercase tracking-widest font-light text-xs" style={{ opacity: 0.6 }}>
-            {currencyLabel}
-          </span>
+          <span className="uppercase tracking-widest font-light text-xs" style={{ opacity: 0.6 }}>{t.storePreview}</span>
+          <span className="uppercase tracking-widest font-light text-xs" style={{ opacity: 0.6 }}>{currencyLabel}</span>
         </div>
         {priced.map((s) => (
-          <div
-            key={s.name}
-            className="flex items-center justify-between rounded-2xl px-3 py-2.5"
-            style={{ background: "rgba(215,226,234,0.04)" }}
-          >
+          <div key={s.name} className="flex items-center justify-between rounded-2xl px-3 py-2.5" style={{ background: "rgba(215,226,234,0.04)" }}>
             <div className="min-w-0">
               <div className="font-medium truncate" style={{ fontSize: "0.95rem" }}>{s.name}</div>
               <div className="font-light truncate" style={{ opacity: 0.55, fontSize: "0.75rem" }}>{s.tag}</div>
