@@ -1,13 +1,14 @@
-import { motion } from "framer-motion";
+import { motion, type Transition } from "framer-motion";
 
 /**
  * Inline "3D" SVG scenes — no bitmap images. Each scene renders on a dark
  * gradient panel and floats/rotates subtly to feel dimensional.
  */
 
+const EASE_IN_OUT: Transition["ease"] = "easeInOut";
 const float = (delay = 0, y = 8) => ({
   animate: { y: [0, -y, 0] },
-  transition: { duration: 4 + delay, repeat: Infinity, ease: "easeInOut", delay },
+  transition: { duration: 4 + delay, repeat: Infinity, ease: EASE_IN_OUT, delay } as Transition,
 });
 
 function Panel({ children }: { children: React.ReactNode }) {
