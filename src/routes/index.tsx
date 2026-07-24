@@ -1,43 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { HeroSection } from "@/components/jack/HeroSection";
-import { MarqueeSection } from "@/components/jack/MarqueeSection";
-import { AboutSection } from "@/components/jack/AboutSection";
-import { ServicesSection } from "@/components/jack/ServicesSection";
-import { ProjectsSection } from "@/components/jack/ProjectsSection";
-import { PriceSection } from "@/components/jack/PriceSection";
-import { ContactSection } from "@/components/jack/ContactSection";
+import { AryaOnboarding } from "@/components/arya/AryaOnboarding";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Jack — 3D Creator" },
+      { title: "Arya Premium — Onboarding" },
       {
         name: "description",
         content:
-          "Portfolio of Jack, a 3D creator crafting striking and unforgettable projects across branding, motion, and web design.",
+          "Arya Premium onboarding — a premium Telegram Story experience. Choose your language, appearance, and currency.",
       },
-      { property: "og:title", content: "Jack — 3D Creator" },
+      { property: "og:title", content: "Arya Premium — Onboarding" },
       {
         property: "og:description",
-        content: "Portfolio of Jack, a 3D creator crafting striking and unforgettable projects across branding, motion, and web design.",
+        content: "Premium Telegram Story Experience. Personalize your Arya Premium.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "theme-color", content: "#0C0C0C" },
     ],
   }),
   component: Index,
 });
 
 function Index() {
-  return (
-    <main style={{ background: "#0C0C0C", overflowX: "clip", fontFamily: "'Kanit', sans-serif" }}>
-      <HeroSection />
-      <MarqueeSection />
-      <AboutSection />
-      <ServicesSection />
-      <ProjectsSection />
-      <PriceSection />
-      <ContactSection />
-    </main>
-  );
+  return <AryaOnboarding />;
 }
