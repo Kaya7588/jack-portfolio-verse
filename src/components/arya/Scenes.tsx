@@ -51,7 +51,7 @@ export function WelcomeScene() {
           className="absolute h-[78%] w-[78%] rounded-full"
           style={{ border: "1px dashed rgba(215,226,234,0.18)" }}
           animate={{ rotate: 360 }}
-          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" as const }}
         />
         {/* Center avatar */}
         <motion.div {...float(0, 6)} className="relative">
@@ -92,7 +92,7 @@ export function WelcomeScene() {
                 fontSize: 28,
               }}
               animate={{ y: [y - 4, y + 4, y - 4] }}
-              transition={{ duration: 3 + (i % 3), repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}
+              transition={{ duration: 3 + (i % 3), repeat: Infinity, ease: "easeInOut" as const, delay: i * 0.15 }}
             >
               <span style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}>{e}</span>
             </motion.div>
@@ -240,7 +240,7 @@ export function DeliveryScene() {
           className="absolute text-[54px]"
           style={{ top: "12%", right: "6%", filter: "drop-shadow(0 8px 20px rgba(42,171,238,0.5))" }}
           animate={{ x: [0, -8, 0], y: [0, -6, 0], rotate: [-8, -2, -8] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" as const }}
         >
           ✈️
         </motion.div>
