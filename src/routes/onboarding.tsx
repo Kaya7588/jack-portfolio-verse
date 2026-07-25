@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { DICTS, LANG_META, type LangId } from "@/lib/arya-i18n";
 import { SCENES } from "@/components/arya/Scenes";
 
@@ -52,7 +52,7 @@ const SAMPLE_PRICES_INR = [199, 499, 899];
 function formatPrice(inr: number, currencyId: string, lang: LangId) {
   const c = CURRENCIES.find((x) => x.id === currencyId) ?? CURRENCIES[0];
   const value = inr * c.rateFromInr;
-  const localeMap: Record<LangId, string> = { en: c.locale, hi: c.id === "inr" ? "hi-IN" : c.locale, ar: "ar" };
+  const localeMap: Record<LangId, string> = { en: c.locale, hi: c.id === "inr" ? "hi-IN" : c.locale };
   try {
     return new Intl.NumberFormat(localeMap[lang], {
       style: "currency",
@@ -117,6 +117,7 @@ function savePrefs(p: SavedPrefs) {
 }
 
 function OnboardingPage() {
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("features");
   const [slide, setSlide] = useState(0);
   const [lang, setLang] = useState<LangId>("en");
@@ -127,29 +128,28 @@ function OnboardingPage() {
   const [vh, setVh] = useState<number | null>(null);
 
   const t = DICTS[lang];
-  const dir = LANG_META[lang].dir;
 
   useEffect(() => {
     const saved = loadPrefs();
     if (saved) {
       setLang(saved.lang); setTheme(saved.theme); setCurrency(saved.currency);
-      if (saved.completed) setPhase("done");
+      if (saved.completed) {
+        navigate({ to: "/" });
+        return;
+      }
     }
     setHydrated(true);
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (!hydrated) return;
-    savePrefs({ lang, theme, currency, completed: phase === "done" });
-  }, [lang, theme, currency, phase, hydrated]);
+    savePrefs({ lang, theme, currency, completed: false });
+  }, [lang, theme, currency, hydrated]);
 
-  // Apply document dir for RTL
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.documentElement.dir = dir;
     document.documentElement.lang = lang;
-    return () => { document.documentElement.dir = "ltr"; };
-  }, [dir, lang]);
+  }, [lang]);
 
   useEffect(() => {
     const tg = getTg();
@@ -173,7 +173,9 @@ function OnboardingPage() {
       const top = parseFloat(cs.paddingTop) || 0;
       const bottom = parseFloat(cs.paddingBottom) || 0;
       document.body.removeChild(probe);
-      setInsets({ top, bottom });
+      // Telegram already handles its own header — cap top inset so header text isn't pushed too far down.
+      const inTg = !!getTg();
+      setInsets({ top: inTg ? Math.min(top, 4) : top, bottom });
     };
     read();
     window.addEventListener("resize", read);
@@ -188,17 +190,31 @@ function OnboardingPage() {
     if (phase === "language") { setPhase("features"); setSlide(featCount - 1); return; }
     if (phase === "theme") { setPhase("language"); return; }
     if (phase === "currency") { setPhase("theme"); return; }
-    if (phase === "done") { setPhase("currency"); return; }
   }, [phase, slide, featCount]);
 
   const goNextFromFeatures = useCallback(() => { haptic("medium"); setPhase("language"); }, []);
+
+  const finishOnboarding = useCallback(() => {
+    haptic("success");
+    savePrefs({ lang, theme, currency, completed: true });
+    navigate({ to: "/" });
+  }, [lang, theme, currency, navigate]);
 
   const advance = useCallback(() => {
     haptic("medium");
     if (phase === "language") return setPhase("theme");
     if (phase === "theme") return setPhase("currency");
-    if (phase === "currency") { haptic("success"); return setPhase("done"); }
-  }, [phase]);
+    if (phase === "currency") return finishOnboarding();
+  }, [phase, finishOnboarding]);
+
+  const onPrimary = useCallback(() => {
+    if (phase === "features") {
+      if (slide < featCount - 1) { haptic("light"); setSlide(slide + 1); }
+      else goNextFromFeatures();
+      return;
+    }
+    advance();
+  }, [phase, slide, featCount, advance, goNextFromFeatures]);
 
   const canBack = !(phase === "features" && slide === 0);
 
@@ -211,43 +227,44 @@ function OnboardingPage() {
   }, [canBack, goBack]);
 
   const minH = vh ? `${vh}px` : "100dvh";
-  const BackIcon = dir === "rtl" ? ArrowRight : ArrowLeft;
+  const primaryLabel = phase === "features"
+    ? (slide < featCount - 1 ? t.next : t.getStarted)
+    : phase === "currency" ? t.finish : t.continue;
 
   return (
     <div
-      dir={dir}
       className="relative w-full flex justify-center"
       style={{
         minHeight: minH,
         background: "#0C0C0C",
-        fontFamily: "'Kanit', sans-serif",
+        fontFamily: "'Kanit', 'Noto Sans Devanagari', sans-serif",
         color: "#D7E2EA",
         paddingTop: insets.top,
         paddingBottom: insets.bottom,
       }}
     >
-      <div className="relative w-full max-w-[440px] flex flex-col px-6 pt-6 pb-8" style={{ overflowX: "clip", minHeight: `calc(${minH} - ${insets.top + insets.bottom}px)` }}>
-        {/* Top bar — no title, back + skip only */}
-        <div className="flex items-center justify-between h-10 shrink-0 relative z-20">
+      <div className="relative w-full max-w-[440px] flex flex-col px-6 pt-3 pb-6" style={{ overflowX: "clip", minHeight: `calc(${minH} - ${insets.top + insets.bottom}px)` }}>
+        {/* Top bar — back + skip only, compact */}
+        <div className="flex items-center justify-between h-9 shrink-0 relative z-20">
           <button
             onClick={goBack}
             disabled={!canBack}
             aria-label={t.back}
-            className="h-10 w-10 -ms-2 grid place-items-center rounded-full transition-opacity disabled:opacity-0 disabled:pointer-events-none hover:bg-white/5"
+            className="h-9 w-9 -ms-2 grid place-items-center rounded-full transition-opacity disabled:opacity-0 disabled:pointer-events-none hover:bg-white/5"
           >
-            <BackIcon size={22} strokeWidth={2} />
+            <ArrowLeft size={22} strokeWidth={2} />
           </button>
           <div />
           <button
-            onClick={() => { haptic("light"); setPhase("done"); }}
+            onClick={goNextFromFeatures}
             className="text-sm font-light opacity-70 hover:opacity-100 transition-opacity px-2"
-            style={{ visibility: phase !== "features" && phase !== "done" ? "visible" : "hidden" }}
+            style={{ visibility: phase === "features" ? "visible" : "hidden" }}
           >
             {t.skip}
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col mt-2 min-h-0">
+        <div className="flex-1 flex flex-col mt-1 min-h-0">
           <AnimatePresence mode="wait">
             {phase === "features" && (
               <FeatureCarousel
@@ -300,48 +317,33 @@ function OnboardingPage() {
                 onChange={(v) => { haptic("select"); setCurrency(v as CurrencyId); }}
               />
             )}
-            {phase === "done" && <DonePane key="done" lang={lang} theme={theme} currency={currency} />}
           </AnimatePresence>
         </div>
 
-        <div className="shrink-0 pt-6 flex flex-col items-center gap-5">
+        <div className="shrink-0 pt-5 flex flex-col items-center gap-4">
           {phase === "features" && (
             <ProgressDots count={featCount} active={slide} onDot={(i) => { haptic("select"); setSlide(i); }} />
           )}
 
-          {phase === "features" ? (
-            <div className="h-1" />
-          ) : phase !== "done" ? (
-            <button
-              onClick={advance}
-              className="w-full rounded-full py-4 text-base text-white font-medium uppercase tracking-widest"
-              style={{
-                background: "linear-gradient(123deg, #18011F 7%, #B600A8 37%, #7621B0 72%, #BE4C00 100%)",
-                boxShadow: "0px 4px 4px rgba(181, 1, 167, 0.25), 4px 4px 12px #7721B1 inset",
-                outline: "2px solid #ffffff",
-                outlineOffset: "-3px",
-              }}
-            >
-              {phase === "currency" ? t.finish : t.continue}
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                haptic("light");
-                try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
-                setPhase("features"); setSlide(0);
-                setLang("en"); setTheme("dark"); setCurrency("inr");
-              }}
-              className="w-full rounded-full py-4 text-base font-medium uppercase tracking-widest border-2 border-[#D7E2EA] text-[#D7E2EA] hover:bg-white/5 transition-colors"
-            >
-              {t.restart}
-            </button>
-          )}
+          <button
+            onClick={onPrimary}
+            className="w-full rounded-full py-4 text-base text-white font-medium uppercase tracking-widest"
+            style={{
+              background: "linear-gradient(123deg, #18011F 7%, #B600A8 37%, #7621B0 72%, #BE4C00 100%)",
+              boxShadow: "0px 4px 4px rgba(181, 1, 167, 0.25), 4px 4px 12px #7721B1 inset",
+              outline: "2px solid #ffffff",
+              outlineOffset: "-3px",
+            }}
+          >
+            {primaryLabel}
+          </button>
         </div>
       </div>
     </div>
   );
 }
+
+
 
 function ProgressDots({ count, active, onDot }: { count: number; active: number; onDot: (i: number) => void }) {
   return (
