@@ -244,7 +244,7 @@ function OnboardingPage() {
       }}
     >
       <div className="relative w-full max-w-[440px] flex flex-col px-6 pt-3 pb-6" style={{ overflowX: "clip", minHeight: `calc(${minH} - ${insets.top + insets.bottom}px)` }}>
-        {/* Top bar — back + skip only, compact */}
+        {/* Top bar — back only */}
         <div className="flex items-center justify-between h-9 shrink-0 relative z-20">
           <button
             onClick={goBack}
@@ -255,14 +255,9 @@ function OnboardingPage() {
             <ArrowLeft size={22} strokeWidth={2} />
           </button>
           <div />
-          <button
-            onClick={goNextFromFeatures}
-            className="text-sm font-light opacity-70 hover:opacity-100 transition-opacity px-2"
-            style={{ visibility: phase === "features" ? "visible" : "hidden" }}
-          >
-            {t.skip}
-          </button>
+          <div className="h-9 w-9" />
         </div>
+
 
         <div className="flex-1 flex flex-col mt-1 min-h-0">
           <AnimatePresence mode="wait">
