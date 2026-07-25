@@ -208,13 +208,9 @@ function OnboardingPage() {
   }, [phase, finishOnboarding]);
 
   const onPrimary = useCallback(() => {
-    if (phase === "features") {
-      if (slide < featCount - 1) { haptic("light"); setSlide(slide + 1); }
-      else goNextFromFeatures();
-      return;
-    }
+    if (phase === "features") { goNextFromFeatures(); return; }
     advance();
-  }, [phase, slide, featCount, advance, goNextFromFeatures]);
+  }, [phase, advance, goNextFromFeatures]);
 
   const canBack = !(phase === "features" && slide === 0);
 
@@ -228,8 +224,9 @@ function OnboardingPage() {
 
   const minH = vh ? `${vh}px` : "100dvh";
   const primaryLabel = phase === "features"
-    ? (slide < featCount - 1 ? t.next : t.getStarted)
+    ? t.getStarted
     : phase === "currency" ? t.finish : t.continue;
+
 
   return (
     <div
