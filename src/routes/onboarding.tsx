@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { DICTS, LANG_META, type LangId } from "@/lib/arya-i18n";
 import { SCENES } from "@/components/arya/Scenes";
 
@@ -52,7 +52,7 @@ const SAMPLE_PRICES_INR = [199, 499, 899];
 function formatPrice(inr: number, currencyId: string, lang: LangId) {
   const c = CURRENCIES.find((x) => x.id === currencyId) ?? CURRENCIES[0];
   const value = inr * c.rateFromInr;
-  const localeMap: Record<LangId, string> = { en: c.locale, hi: c.id === "inr" ? "hi-IN" : c.locale, ar: "ar" };
+  const localeMap: Record<LangId, string> = { en: c.locale, hi: c.id === "inr" ? "hi-IN" : c.locale };
   try {
     return new Intl.NumberFormat(localeMap[lang], {
       style: "currency",
