@@ -60,45 +60,17 @@ function Panel({ children, tilt = false }: { children: ReactNode; tilt?: boolean
   );
 }
 
-/* ---------- Scene 1: Welcome — 4 avatar/genre cards ---------- */
-const AVATARS = [
-  { url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Ravi&backgroundColor=7621B0", tag: "🎭 Drama" },
-  { url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Priya&backgroundColor=B600A8", tag: "👻 Horror" },
-  { url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Kabir&backgroundColor=BE4C00", tag: "🚀 Sci-fi" },
-  { url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Meera&backgroundColor=1E7A50", tag: "❤️ Romance" },
-];
+/* ---------- Scene 1: Welcome — stacked card carousel (no text) ---------- */
+import { StackedCardCarousel } from "./StackedCardCarousel";
 
 export function WelcomeScene() {
   return (
-    <Panel>
-      <div className="absolute inset-0 grid grid-cols-2 gap-3 p-5 place-items-center">
-        {AVATARS.map((a, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 12, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.08 * i + 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            whileHover={{ y: -4, scale: 1.03 }}
-            className="relative w-full aspect-square rounded-3xl overflow-hidden"
-            style={{
-              background: "linear-gradient(140deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02))",
-              border: "1px solid rgba(215,226,234,0.18)",
-              boxShadow: "0 18px 36px -14px rgba(182,0,168,0.45), inset 0 2px 0 rgba(255,255,255,0.10)",
-            }}
-          >
-            <img src={a.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <div
-              className="absolute bottom-1.5 left-1.5 right-1.5 rounded-full px-2 py-1 text-[10px] font-semibold text-white text-center backdrop-blur"
-              style={{ background: "rgba(12,12,12,0.55)", border: "1px solid rgba(255,255,255,0.12)" }}
-            >
-              {a.tag}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </Panel>
+    <div className="relative w-full aspect-square max-w-[320px] flex items-center justify-center">
+      <StackedCardCarousel />
+    </div>
   );
 }
+
 
 /* ---------- Scene 2: Payment methods ---------- */
 export function PaymentsScene() {

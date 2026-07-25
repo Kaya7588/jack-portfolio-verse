@@ -208,13 +208,9 @@ function OnboardingPage() {
   }, [phase, finishOnboarding]);
 
   const onPrimary = useCallback(() => {
-    if (phase === "features") {
-      if (slide < featCount - 1) { haptic("light"); setSlide(slide + 1); }
-      else goNextFromFeatures();
-      return;
-    }
+    if (phase === "features") { goNextFromFeatures(); return; }
     advance();
-  }, [phase, slide, featCount, advance, goNextFromFeatures]);
+  }, [phase, advance, goNextFromFeatures]);
 
   const canBack = !(phase === "features" && slide === 0);
 
@@ -228,8 +224,9 @@ function OnboardingPage() {
 
   const minH = vh ? `${vh}px` : "100dvh";
   const primaryLabel = phase === "features"
-    ? (slide < featCount - 1 ? t.next : t.getStarted)
+    ? t.getStarted
     : phase === "currency" ? t.finish : t.continue;
+
 
   return (
     <div
@@ -244,7 +241,7 @@ function OnboardingPage() {
       }}
     >
       <div className="relative w-full max-w-[440px] flex flex-col px-6 pt-3 pb-6" style={{ overflowX: "clip", minHeight: `calc(${minH} - ${insets.top + insets.bottom}px)` }}>
-        {/* Top bar — back + skip only, compact */}
+        {/* Top bar — back only */}
         <div className="flex items-center justify-between h-9 shrink-0 relative z-20">
           <button
             onClick={goBack}
@@ -255,14 +252,9 @@ function OnboardingPage() {
             <ArrowLeft size={22} strokeWidth={2} />
           </button>
           <div />
-          <button
-            onClick={goNextFromFeatures}
-            className="text-sm font-light opacity-70 hover:opacity-100 transition-opacity px-2"
-            style={{ visibility: phase === "features" ? "visible" : "hidden" }}
-          >
-            {t.skip}
-          </button>
+          <div className="h-9 w-9" />
         </div>
+
 
         <div className="flex-1 flex flex-col mt-1 min-h-0">
           <AnimatePresence mode="wait">
