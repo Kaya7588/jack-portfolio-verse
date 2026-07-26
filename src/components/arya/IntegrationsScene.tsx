@@ -79,7 +79,7 @@ export function IntegrationsScene() {
           </div>
         </div>
 
-        <div className="flex flex-col justify-center gap-5">
+        <div className="flex flex-col justify-center gap-6">
           <Circle ref={div4Ref}>
             <QrCode className={ICON_CLASS} style={{ color: "#BBCCD7" }} />
           </Circle>
