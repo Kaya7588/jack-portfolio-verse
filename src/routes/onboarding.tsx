@@ -468,11 +468,12 @@ function OnboardingPage() {
                 headerExtra={
                   <CurrencySearch
                     value={currencyQuery}
-                    onChange={(v) => {
+                    onChange={(v: string) => {
                       setCurrencyQuery(v);
                       if (v.trim().length >= 2) track("onboarding_currency_search", { q: v.slice(0, 24) });
                     }}
                   />
+
                 }
                 options={CURRENCIES.filter((c) => {
                   const q = currencyQuery.trim().toLowerCase();
