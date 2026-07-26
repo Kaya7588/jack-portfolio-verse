@@ -41,8 +41,8 @@ export const Route = createFileRoute("/onboarding")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      ...PRELOAD_IMAGES.map((href) => ({ rel: "preload", as: "image", href, fetchPriority: "high" })),
-      { rel: "preload", as: "image", href: "https://files.catbox.moe/ug9azb.jpg", fetchPriority: "high" },
+      ...PRELOAD_IMAGES.map((href) => ({ rel: "preload", as: "image", href, fetchPriority: "high" as const })),
+      { rel: "preload", as: "image", href: "https://files.catbox.moe/ug9azb.jpg", fetchPriority: "high" as const },
       { rel: "preconnect", href: "https://files.catbox.moe" },
     ],
   }),
