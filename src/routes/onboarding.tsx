@@ -370,7 +370,7 @@ function OnboardingPage() {
                   accessory: <CurrencyGlyph symbol={c.symbol} />,
                 }))}
                 value={currency}
-                onChange={(v) => { haptic("select"); setCurrency(v as CurrencyId); }}
+                onChange={(v) => { haptic("select"); setCurrency(v as CurrencyId); track("onboarding_select_currency", { value: v }); }}
               />
             )}
           </AnimatePresence>
