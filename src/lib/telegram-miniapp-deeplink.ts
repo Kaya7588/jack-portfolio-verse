@@ -64,7 +64,7 @@ export function isTelegramVersionAtLeast(tg: TelegramMiniApp | null, version: st
   return false;
 }
 
-export function isSafeInternalRedirect(value: string | undefined | null): value is string {
+export function isSafeInternalRedirect(value: string | undefined | null): boolean {
   if (!value || typeof value !== "string") return false;
   if (!value.startsWith("/") || value.startsWith("//")) return false;
   if (/^\/\\/u.test(value)) return false;
