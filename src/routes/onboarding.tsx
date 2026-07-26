@@ -154,7 +154,39 @@ function savePrefs(p: SavedPrefs) {
   try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch { /* noop */ }
 }
 
+// Smart currency default from browser locale / region
+function guessCurrency(): CurrencyId {
+  if (typeof navigator === "undefined") return "inr";
+  const raw = (navigator.language || "en-IN").toLowerCase();
+  const region = raw.split("-")[1] ?? "";
+  const map: Record<string, CurrencyId> = {
+    in: "inr", us: "usd", gb: "gbp", ie: "eur", de: "eur", fr: "eur", es: "eur", it: "eur", nl: "eur",
+    ae: "aed", sa: "sar", jp: "jpy", cn: "cny", sg: "sgd", au: "aud", ca: "cad", ch: "chf",
+    hk: "hkd", kr: "krw", my: "myr", th: "thb", ru: "rub", br: "brl",
+  };
+  return map[region] ?? "inr";
+}
+
+// A/B micro-copy variant. Sticky per session.
+const AB_KEY = "arya.ab.variant.v1";
+function abVariant(): "A" | "B" {
+  if (typeof window === "undefined") return "A";
+  try {
+    const v = window.sessionStorage.getItem(AB_KEY);
+    if (v === "A" || v === "B") return v;
+    const pick: "A" | "B" = Math.random() < 0.5 ? "A" : "B";
+    window.sessionStorage.setItem(AB_KEY, pick);
+    return pick;
+  } catch { return "A"; }
+}
+
+const MICROCOPY = {
+  A: { getStarted: null as string | null, continue: null as string | null, finish: null as string | null },
+  B: { getStarted: "Start Now", continue: "Looks Good", finish: "Enter Store" },
+};
+
 function OnboardingPage() {
+
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("features");
   const [slide, setSlide] = useState(0);
