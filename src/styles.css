@@ -155,5 +155,18 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  padding-block: 0.18em;
+}
+
+:lang(hi) .hero-heading,
+html[lang="hi"] .hero-heading {
+  line-height: 1.28 !important;
+  padding-block: 0.22em 0.14em;
+  text-transform: none;
+}
+
+:lang(hi),
+html[lang="hi"] {
+  font-family: 'Noto Sans Devanagari', 'Kanit', sans-serif;
 }
 
