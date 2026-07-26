@@ -255,13 +255,11 @@ export default function SupportWall() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full max-w-[300px] overflow-hidden rounded-[28px]"
+      className="relative w-full max-w-[340px] overflow-hidden rounded-[28px]"
       style={{
         aspectRatio: "1 / 1",
         touchAction: "none",
-        border: "1px solid rgba(215,226,234,0.14)",
-        background:
-          "radial-gradient(120% 100% at 50% 0%, rgba(118,33,176,0.28) 0%, rgba(12,12,12,0) 60%), #0C0C0C",
+        background: "transparent",
       }}
     >
       <canvas ref={canvasRef} className="absolute inset-0 block" />

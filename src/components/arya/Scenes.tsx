@@ -76,6 +76,7 @@ export function WelcomeScene() {
 export { IntegrationsScene } from "./IntegrationsScene";
 import { IntegrationsScene } from "./IntegrationsScene";
 import SupportWall from "./SupportWall";
+import RunwayLoader from "./RunwayLoader";
 
 export function LegacyPaymentsScene() {
 
@@ -305,4 +306,4 @@ export function LegacySupportScene() {
   );
 }
 
-export const SCENES = [WelcomeScene, IntegrationsScene, DeliveryScene, SupportWall];
+export const SCENES = [WelcomeScene, IntegrationsScene, RunwayLoader, SupportWall];
