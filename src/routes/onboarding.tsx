@@ -340,7 +340,7 @@ function OnboardingPage() {
                   id, label: LANG_META[id].label, sub: LANG_META[id].sub,
                 }))}
                 value={lang}
-                onChange={(v) => { haptic("select"); setLang(v as LangId); }}
+                onChange={(v) => { haptic("select"); setLang(v as LangId); track("onboarding_select_language", { value: v }); }}
               />
             )}
             {phase === "theme" && (
@@ -355,7 +355,7 @@ function OnboardingPage() {
                   accessory: <ThemeSwatch colors={THEME_SWATCHES[id]} />,
                 }))}
                 value={theme}
-                onChange={(v) => { haptic("select"); setTheme(v as ThemeId); }}
+                onChange={(v) => { haptic("select"); setTheme(v as ThemeId); track("onboarding_select_theme", { value: v }); }}
               />
             )}
             {phase === "currency" && (
