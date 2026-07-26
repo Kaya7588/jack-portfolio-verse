@@ -355,9 +355,37 @@ function OnboardingPage() {
   }, [canBack, goBack]);
 
   const minH = vh ? `${vh}px` : "100dvh";
+  const mc = MICROCOPY[variantRef.current];
   const primaryLabel = phase === "features"
-    ? t.getStarted
-    : phase === "currency" ? t.finish : t.continue;
+    ? (mc.getStarted ?? t.getStarted)
+    : phase === "currency" ? (mc.finish ?? t.finish) : (mc.continue ?? t.continue);
+
+  // Splash for returning users (only 1st scene, no buttons, auto-exits).
+  if (showSplash) {
+    return <SplashScreen minH={minH} insets={insets} title={t.features[0].title} />;
+  }
+
+  // Deep-link prompt for new users arriving from a product deep link.
+  if (showDeepPrompt) {
+    return (
+      <DeeplinkPrompt
+        minH={minH}
+        insets={insets}
+        redirectTo={redirectTo}
+        onSkip={() => {
+          haptic("light");
+          track("onboarding_deeplink_skip", { redirect: redirectTo });
+          savePrefs({ lang, theme, currency, completed: true });
+          navigate({ to: redirectTo });
+        }}
+        onCustomize={() => {
+          haptic("medium");
+          track("onboarding_deeplink_customize", { redirect: redirectTo });
+          setShowDeepPrompt(false);
+        }}
+      />
+    );
+  }
 
 
   return (
