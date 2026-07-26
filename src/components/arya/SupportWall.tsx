@@ -27,13 +27,22 @@ const CARD_RADIUS = 12;
 const PALETTE = ["#FDE68A", "#BBF7D0", "#FBCFE8", "#C7D2FE", "#BAE6FD", "#FED7AA"];
 
 const SEED_TEXTS = [
-  "Agent replied in 20s",
-  "Episode recovered",
-  "UTR verified fast",
-  "24/7 real humans",
-  "Refund sorted",
+  "Agent replied in 18s ⚡",
+  "Episode recovered in 2 min",
+  "UTR auto-verified in 12s",
+  "24/7 real humans, no bots",
+  "Refund sorted same day",
+  "Missing series delivered",
 ];
-const SEED_EMOJIS = ["🎧", "💬", "✅", "🙌", "❤️", "⭐"];
+const SEED_EMOJIS = ["🎧", "💬", "✅", "🙌", "❤️", "⭐", "⚡"];
+
+const AUTO_REPLIES = [
+  "On it! Agent joining…",
+  "Got you — checking now ✅",
+  "Reply in <20s ⚡",
+  "Sending your episode 🎧",
+];
+
 
 type StickerKind = "text" | "emoji";
 interface Sticker {
