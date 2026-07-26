@@ -42,16 +42,11 @@ export function IntegrationsScene() {
   return (
     <div
       ref={containerRef}
-      className="relative flex w-full max-w-[300px] items-center justify-center overflow-hidden rounded-[28px] p-5"
-      style={{
-        aspectRatio: "1 / 1",
-        border: "1px solid rgba(215,226,234,0.14)",
-        background:
-          "radial-gradient(120% 100% at 50% 0%, rgba(118,33,176,0.28) 0%, rgba(12,12,12,0) 60%), #0C0C0C",
-      }}
+      className="relative flex w-full max-w-[340px] items-center justify-center p-5"
+      style={{ aspectRatio: "1 / 1", background: "transparent" }}
     >
-      <div className="flex size-full max-h-[220px] flex-row items-stretch justify-between gap-8">
-        <div className="flex flex-col justify-center gap-5">
+      <div className="flex size-full max-h-[260px] flex-row items-stretch justify-between gap-8">
+        <div className="flex flex-col justify-center gap-6">
           <Circle ref={div1Ref}>
             <CreditCard className={ICON_CLASS} style={{ color: "#E6C6FF" }} />
           </Circle>
@@ -66,14 +61,21 @@ export function IntegrationsScene() {
         <div className="flex flex-col justify-center">
           <div
             ref={hubRef}
-            className="z-10 grid size-14 place-items-center rounded-2xl"
+            className="z-10 grid place-items-center overflow-hidden rounded-3xl"
             style={{
+              width: 88,
+              height: 88,
               border: "1px solid rgba(215,226,234,0.22)",
-              background: "linear-gradient(140deg,#7621B0,#B600A8)",
+              background: "#141414",
               boxShadow: "0 20px 40px -18px rgba(182,0,168,0.65), inset 0 1px 0 rgba(255,255,255,0.2)",
             }}
           >
-            <Headphones className="h-6 w-6" style={{ color: "#fff" }} />
+            <img
+              src="https://files.catbox.moe/ug9azb.jpg"
+              alt="Arya"
+              className="h-full w-full object-cover"
+              draggable={false}
+            />
           </div>
         </div>
 
