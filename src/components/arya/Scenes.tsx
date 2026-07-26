@@ -77,7 +77,7 @@ export { IntegrationsScene } from "./IntegrationsScene";
 import { IntegrationsScene } from "./IntegrationsScene";
 import SupportWall from "./SupportWall";
 
-function LegacyPaymentsScene() {
+export function LegacyPaymentsScene() {
 
   return (
     <Panel tilt>
@@ -236,7 +236,7 @@ export function DeliveryScene() {
 }
 
 /* ---------- Scene 4: Support ---------- */
-export function SupportScene() {
+export function LegacySupportScene() {
   return (
     <Panel tilt>
       <div className="absolute inset-0 grid place-items-center">
@@ -305,4 +305,4 @@ export function SupportScene() {
   );
 }
 
-export const SCENES = [WelcomeScene, PaymentsScene, DeliveryScene, SupportScene];
+export const SCENES = [WelcomeScene, IntegrationsScene, DeliveryScene, SupportWall];
