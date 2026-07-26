@@ -31,7 +31,9 @@ const THEME_SWATCHES: Record<ThemeId, string[]> = {
   cream: ["#F5EEDC", "#D9B382", "#6B4A2B"],
 };
 
-type CurrencyId = "inr" | "usd" | "eur" | "gbp";
+type CurrencyId =
+  | "inr" | "usd" | "eur" | "gbp" | "aed" | "sar" | "jpy" | "cny"
+  | "sgd" | "aud" | "cad" | "chf" | "hkd" | "krw" | "myr" | "thb" | "rub" | "brl";
 const CURRENCIES: {
   id: CurrencyId;
   label: string;
@@ -45,6 +47,20 @@ const CURRENCIES: {
   { id: "usd", label: "USD", sub: "US Dollar", symbol: "$", code: "USD", locale: "en-US", rateFromInr: 0.012 },
   { id: "eur", label: "EUR", sub: "Euro", symbol: "€", code: "EUR", locale: "en-IE", rateFromInr: 0.011 },
   { id: "gbp", label: "GBP", sub: "British Pound", symbol: "£", code: "GBP", locale: "en-GB", rateFromInr: 0.0095 },
+  { id: "aed", label: "AED", sub: "UAE Dirham", symbol: "د.إ", code: "AED", locale: "en-AE", rateFromInr: 0.044 },
+  { id: "sar", label: "SAR", sub: "Saudi Riyal", symbol: "﷼", code: "SAR", locale: "en-SA", rateFromInr: 0.045 },
+  { id: "jpy", label: "JPY", sub: "Japanese Yen", symbol: "¥", code: "JPY", locale: "ja-JP", rateFromInr: 1.85 },
+  { id: "cny", label: "CNY", sub: "Chinese Yuan", symbol: "¥", code: "CNY", locale: "zh-CN", rateFromInr: 0.086 },
+  { id: "sgd", label: "SGD", sub: "Singapore Dollar", symbol: "S$", code: "SGD", locale: "en-SG", rateFromInr: 0.016 },
+  { id: "aud", label: "AUD", sub: "Australian Dollar", symbol: "A$", code: "AUD", locale: "en-AU", rateFromInr: 0.018 },
+  { id: "cad", label: "CAD", sub: "Canadian Dollar", symbol: "C$", code: "CAD", locale: "en-CA", rateFromInr: 0.016 },
+  { id: "chf", label: "CHF", sub: "Swiss Franc", symbol: "₣", code: "CHF", locale: "de-CH", rateFromInr: 0.010 },
+  { id: "hkd", label: "HKD", sub: "Hong Kong Dollar", symbol: "HK$", code: "HKD", locale: "en-HK", rateFromInr: 0.094 },
+  { id: "krw", label: "KRW", sub: "South Korean Won", symbol: "₩", code: "KRW", locale: "ko-KR", rateFromInr: 16.2 },
+  { id: "myr", label: "MYR", sub: "Malaysian Ringgit", symbol: "RM", code: "MYR", locale: "ms-MY", rateFromInr: 0.056 },
+  { id: "thb", label: "THB", sub: "Thai Baht", symbol: "฿", code: "THB", locale: "th-TH", rateFromInr: 0.43 },
+  { id: "rub", label: "RUB", sub: "Russian Ruble", symbol: "₽", code: "RUB", locale: "ru-RU", rateFromInr: 1.08 },
+  { id: "brl", label: "BRL", sub: "Brazilian Real", symbol: "R$", code: "BRL", locale: "pt-BR", rateFromInr: 0.065 },
 ];
 
 const SAMPLE_PRICES_INR = [199, 499, 899];
@@ -126,6 +142,8 @@ function OnboardingPage() {
   const [hydrated, setHydrated] = useState(false);
   const [insets, setInsets] = useState({ top: 0, bottom: 0 });
   const [vh, setVh] = useState<number | null>(null);
+  const [exiting, setExiting] = useState(false);
+
 
   const t = DICTS[lang];
 
@@ -197,8 +215,10 @@ function OnboardingPage() {
   const finishOnboarding = useCallback(() => {
     haptic("success");
     savePrefs({ lang, theme, currency, completed: true });
-    navigate({ to: "/" });
+    setExiting(true);
+    window.setTimeout(() => navigate({ to: "/" }), 620);
   }, [lang, theme, currency, navigate]);
+
 
   const advance = useCallback(() => {
     haptic("medium");
@@ -229,7 +249,9 @@ function OnboardingPage() {
 
 
   return (
-    <div
+    <motion.div
+      animate={exiting ? { opacity: 0, scale: 0.985, filter: "blur(6px)" } : { opacity: 1, scale: 1, filter: "blur(0px)" }}
+      transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
       className="relative w-full flex justify-center"
       style={{
         minHeight: minH,
@@ -331,7 +353,7 @@ function OnboardingPage() {
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -509,7 +531,7 @@ function SelectPane({
           {subtitle}
         </p>
       </div>
-      <div role="radiogroup" className="flex flex-col gap-3 flex-1">
+      <div role="radiogroup" className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto pb-3 -mx-1 px-1" style={{ scrollbarWidth: "thin" }}>
         {options.map((o, i) => {
           const selected = value === o.id;
           return (

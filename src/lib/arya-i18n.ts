@@ -37,7 +37,7 @@ export const DICTS: Record<LangId, Dict> = {
     next: "Next",
     getStarted: "Get Started",
     continue: "Continue",
-    finish: "Finish",
+    finish: "Enter in App",
     restart: "Restart Onboarding",
     back: "Back",
     features: [
@@ -75,7 +75,7 @@ export const DICTS: Record<LangId, Dict> = {
     next: "आगे",
     getStarted: "शुरू करें",
     continue: "जारी रखें",
-    finish: "पूरा करें",
+    finish: "ऐप में प्रवेश करें",
     restart: "फिर से शुरू करें",
     back: "वापस",
     features: [
