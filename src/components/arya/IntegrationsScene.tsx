@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useRef } from "react";
-import { CreditCard, Landmark, Wallet, QrCode, Smartphone, IndianRupee, Headphones } from "lucide-react";
+import { CreditCard, Landmark, Wallet, QrCode, Smartphone, IndianRupee } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { AnimatedBeam } from "@/components/ui/animated-beam";
