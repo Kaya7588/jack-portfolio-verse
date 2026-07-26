@@ -22,7 +22,9 @@ export const Route = createFileRoute("/onboarding")({
       ? s.redirect
       : undefined;
     const force = s.force === "1" || s.force === "true";
-    return { redirect: r as string | undefined, force };
+    const preview =
+      s.preview === "splash" || s.preview === "deeplink" ? (s.preview as "splash" | "deeplink") : undefined;
+    return { redirect: r as string | undefined, force, preview };
   },
   head: () => ({
     meta: [
