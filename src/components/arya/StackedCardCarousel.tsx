@@ -89,7 +89,9 @@ function Card({
         <img
           src={src}
           alt=""
-          loading="lazy"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
           draggable={false}
           className="absolute inset-0 h-full w-full object-cover select-none pointer-events-none"
         />
