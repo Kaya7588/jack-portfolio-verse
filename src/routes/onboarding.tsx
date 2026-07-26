@@ -5,6 +5,8 @@ import { ArrowLeft, Check } from "lucide-react";
 import { DICTS, LANG_META, type LangId } from "@/lib/arya-i18n";
 import { SCENES } from "@/components/arya/Scenes";
 import { track } from "@/lib/arya-analytics";
+import { ReturningUserSplash } from "@/components/arya/ReturningUserSplash";
+import { DeepLinkOnboardingPrompt } from "@/components/arya/DeepLinkOnboardingPrompt";
 
 const PRELOAD_IMAGES = [
   "/__l5e/assets-v1/29f3c4fe-bf8b-493c-a3ac-f03a9cc93263/file_0000000013e8820ea802a31d37cc1fdd.png",
