@@ -72,8 +72,13 @@ export function WelcomeScene() {
 }
 
 
-/* ---------- Scene 2: Payment methods ---------- */
-export function PaymentsScene() {
+/* ---------- Scene 2: Payment integrations ---------- */
+export { IntegrationsScene } from "./IntegrationsScene";
+import { IntegrationsScene } from "./IntegrationsScene";
+import SupportWall from "./SupportWall";
+
+function LegacyPaymentsScene() {
+
   return (
     <Panel tilt>
       <div className="absolute inset-0 grid place-items-center">
