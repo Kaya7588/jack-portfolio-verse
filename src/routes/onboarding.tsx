@@ -183,6 +183,26 @@ function OnboardingPage() {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // ---- Analytics: session start + drop-off detection ----
+  const completedRef = useRef(false);
+  useEffect(() => {
+    track("onboarding_start", { lang, theme, currency });
+    const onLeave = () => {
+      if (!completedRef.current) {
+        track("onboarding_dropoff", { phase, slide, lang, theme, currency });
+      }
+    };
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Track each step view (phase + slide within features)
+  useEffect(() => {
+    track("onboarding_step_view", { phase, slide: phase === "features" ? slide : null });
+  }, [phase, slide]);
+
+
   useEffect(() => {
     const tg = getTg();
     if (!tg) return;
