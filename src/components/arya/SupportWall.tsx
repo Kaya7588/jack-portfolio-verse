@@ -209,7 +209,7 @@ export default function SupportWall() {
           ctx.strokeStyle = "rgba(255,255,255,0.22)";
           ctx.stroke();
           if (s.kind === "emoji") {
-            ctx.font = `${EMOJI_FONT_PX}px serif`;
+            ctx.font = `${EMOJI_FONT_PX}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(s.content, 0, 2);
