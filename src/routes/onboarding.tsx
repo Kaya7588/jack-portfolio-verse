@@ -249,7 +249,9 @@ function OnboardingPage() {
 
 
   return (
-    <div
+    <motion.div
+      animate={exiting ? { opacity: 0, scale: 0.985, filter: "blur(6px)" } : { opacity: 1, scale: 1, filter: "blur(0px)" }}
+      transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
       className="relative w-full flex justify-center"
       style={{
         minHeight: minH,
