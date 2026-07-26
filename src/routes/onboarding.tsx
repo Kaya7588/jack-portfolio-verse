@@ -238,16 +238,23 @@ function OnboardingPage() {
 
   const goBack = useCallback(() => {
     haptic("light");
+    track("onboarding_step_back", { phase, slide });
     if (phase === "features") { if (slide > 0) setSlide(slide - 1); return; }
     if (phase === "language") { setPhase("features"); setSlide(featCount - 1); return; }
     if (phase === "theme") { setPhase("language"); return; }
     if (phase === "currency") { setPhase("theme"); return; }
   }, [phase, slide, featCount]);
 
-  const goNextFromFeatures = useCallback(() => { haptic("medium"); setPhase("language"); }, []);
+  const goNextFromFeatures = useCallback(() => {
+    haptic("medium");
+    track("onboarding_step_next", { from: "features", slide });
+    setPhase("language");
+  }, [slide]);
 
   const finishOnboarding = useCallback(() => {
     haptic("success");
+    completedRef.current = true;
+    track("onboarding_complete", { lang, theme, currency });
     savePrefs({ lang, theme, currency, completed: true });
     setExiting(true);
     window.setTimeout(() => navigate({ to: "/" }), 620);
@@ -256,6 +263,7 @@ function OnboardingPage() {
 
   const advance = useCallback(() => {
     haptic("medium");
+    track("onboarding_step_next", { from: phase });
     if (phase === "language") return setPhase("theme");
     if (phase === "theme") return setPhase("currency");
     if (phase === "currency") return finishOnboarding();
