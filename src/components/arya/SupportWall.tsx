@@ -1,44 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState, useLayoutEffect } from "react";
-import { motion } from "framer-motion";
-import type { Body, Engine, Render, Runner, World } from "matter-js";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { Body, Engine, Runner, World } from "matter-js";
 
 /**
- * SupportWall — a compact physics "support wall". Support messages and emoji
- * stickers pile up, collide and can be dragged/tossed. Visitors can add their
- * own support note, which falls in from above.
+ * SupportWall — physical support wall. Quote cards and emoji stickers drop in,
+ * collide, and can be dragged / tossed around. Visitors can add their own note.
  */
 
-const GRAVITY_SCALE = 0.0012;
-const RESTITUTION = 0.05;
-const FRICTION = 0.6;
-const FRICTION_AIR = 0.02;
-const DENSITY = 0.0015;
-const STICKER_CAP = 40;
-const WALL_THICKNESS = 60;
-const TEXT_FONT_PX = 12;
-const TEXT_MAX_WIDTH = 118;
-const TEXT_PAD_X = 10;
+const GRAVITY_SCALE = 0.0011;
+const RESTITUTION = 0.15;
+const FRICTION = 0.4;
+const FRICTION_AIR = 0.015;
+const DENSITY = 0.001;
+const STICKER_CAP = 26;
+const WALL_THICKNESS = 80;
+const TEXT_FONT_PX = 11;
+const TEXT_MAX_WIDTH = 104;
+const TEXT_PAD_X = 9;
 const TEXT_PAD_Y = 7;
-const TEXT_LINE_H = 15;
-const EMOJI_SIZE = 44;
-const EMOJI_FONT_PX = 26;
-const CARD_RADIUS = 18;
-const BORDER_WIDTH = 2;
+const TEXT_LINE_H = 14;
+const EMOJI_SIZE = 38;
+const EMOJI_FONT_PX = 22;
+const CARD_RADIUS = 12;
 
 const PALETTE = ["#FDE68A", "#BBF7D0", "#FBCFE8", "#C7D2FE", "#BAE6FD", "#FED7AA"];
-const STICKER_TEXT_COLOR = "#111827";
 
 const SEED_TEXTS = [
-  "agent replied in 20s",
-  "episode 3 recovered ✅",
-  "UTR verified instantly",
+  "Agent replied in 20s",
+  "Episode recovered",
+  "UTR verified fast",
   "24/7 real humans",
-  "refund sorted fast",
-  "story request approved",
+  "Refund sorted",
 ];
-const SEED_EMOJIS = ["🎧", "💬", "✅", "🙌", "🔥", "❤️", "⭐", "🤝"];
+const SEED_EMOJIS = ["🎧", "💬", "✅", "🙌", "❤️", "⭐"];
 
 type StickerKind = "text" | "emoji";
 interface Sticker {
@@ -50,7 +45,6 @@ interface Sticker {
   color: string;
   lines: string[];
 }
-type BodyWithPlugin = Body & { plugin: { sticker?: Sticker } };
 
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
@@ -95,7 +89,6 @@ export default function SupportWall() {
 
   useIsoLayoutEffect(() => {
     let engine: Engine | null = null;
-    let render: Render | null = null;
     let runner: Runner | null = null;
     let raf = 0;
     let disposed = false;
@@ -107,43 +100,39 @@ export default function SupportWall() {
       const canvas = canvasRef.current;
       if (disposed || !container || !canvas) return;
 
-      const w = container.clientWidth;
-      const h = container.clientHeight;
+      let w = container.clientWidth;
+      let h = container.clientHeight;
       if (!w || !h) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const sizeCanvas = () => {
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+      };
+      sizeCanvas();
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
       engine = M.Engine.create();
       engine.gravity.scale = GRAVITY_SCALE;
       const world: World = engine.world;
 
-      render = M.Render.create({
-        canvas,
-        engine,
-        options: {
-          width: w,
-          height: h,
-          background: "transparent",
-          wireframes: false,
-          pixelRatio: window.devicePixelRatio || 1,
-        },
-      });
-
       const wallOpts = { isStatic: true, render: { visible: false } };
-      const walls = [
-        M.Bodies.rectangle(w / 2, h + WALL_THICKNESS / 2, w * 3, WALL_THICKNESS, wallOpts),
-        M.Bodies.rectangle(-WALL_THICKNESS / 2, h / 2, WALL_THICKNESS, h * 3, wallOpts),
-        M.Bodies.rectangle(w + WALL_THICKNESS / 2, h / 2, WALL_THICKNESS, h * 3, wallOpts),
-      ];
-      M.Composite.add(world, walls);
-
-      const ctx = canvas.getContext("2d");
+      const floor = M.Bodies.rectangle(w / 2, h + WALL_THICKNESS / 2 - 6, w * 3, WALL_THICKNESS, wallOpts);
+      const left = M.Bodies.rectangle(-WALL_THICKNESS / 2, h / 2, WALL_THICKNESS, h * 4, wallOpts);
+      const right = M.Bodies.rectangle(w + WALL_THICKNESS / 2, h / 2, WALL_THICKNESS, h * 4, wallOpts);
+      M.Composite.add(world, [floor, left, right]);
 
       const makeSticker = (kind: StickerKind, content: string, x: number, y: number) => {
         let sw = EMOJI_SIZE;
         let sh = EMOJI_SIZE;
         let lines: string[] = [];
-        if (kind === "text" && ctx) {
+        if (kind === "text") {
           ctx.save();
-          ctx.font = `600 ${TEXT_FONT_PX}px Kanit, sans-serif`;
+          ctx.font = `600 ${TEXT_FONT_PX}px Kanit, system-ui, sans-serif`;
           lines = wrapText(ctx, content, TEXT_MAX_WIDTH);
           const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
           ctx.restore();
@@ -156,66 +145,67 @@ export default function SupportWall() {
           friction: FRICTION,
           frictionAir: FRICTION_AIR,
           density: DENSITY,
-          chamfer: { radius: Math.min(CARD_RADIUS, sh / 2) },
-          angle: (Math.random() - 0.5) * 0.5,
+          chamfer: { radius: Math.min(CARD_RADIUS, sh / 2 - 1) },
+          angle: (Math.random() - 0.5) * 0.4,
           render: { visible: false },
-        }) as BodyWithPlugin;
+        });
         const sticker: Sticker = { body, kind, content, w: sw, h: sh, color, lines };
-        body.plugin = { ...(body.plugin ?? {}), sticker };
+        (body as Body & { plugin: Record<string, unknown> }).plugin = { sticker };
         M.Composite.add(world, body);
         stickersRef.current.push(sticker);
         if (stickersRef.current.length > STICKER_CAP) {
           const old = stickersRef.current.shift();
           if (old) M.Composite.remove(world, old.body);
         }
-        return sticker;
       };
 
       addRef.current = (kind, content) => {
-        makeSticker(kind, content, w * (0.25 + Math.random() * 0.5), -60);
+        makeSticker(kind, content, w * (0.25 + Math.random() * 0.5), -50);
       };
 
-      SEED_TEXTS.forEach((t, i) =>
-        makeSticker("text", t, w * (0.25 + Math.random() * 0.5), -40 - i * 70),
-      );
-      SEED_EMOJIS.forEach((e, i) =>
-        makeSticker("emoji", e, w * (0.15 + Math.random() * 0.7), -30 - i * 55),
-      );
+      SEED_TEXTS.forEach((t, i) => makeSticker("text", t, w * (0.25 + Math.random() * 0.5), -30 - i * 60));
+      SEED_EMOJIS.forEach((e, i) => makeSticker("emoji", e, w * (0.18 + Math.random() * 0.64), -20 - i * 48));
 
       const mouse = M.Mouse.create(canvas);
       const mc = M.MouseConstraint.create(engine, {
         mouse,
-        constraint: { stiffness: 0.2, render: { visible: false } },
+        constraint: { stiffness: 0.18, render: { visible: false } },
       });
       M.Composite.add(world, mc);
-      render.mouse = mouse;
 
       runner = M.Runner.create();
       M.Runner.run(runner, engine);
-      M.Render.run(render);
 
       const draw = () => {
         raf = requestAnimationFrame(draw);
-        if (!ctx) return;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
         for (const s of stickersRef.current) {
           const { position, angle } = s.body;
           ctx.save();
           ctx.translate(position.x, position.y);
           ctx.rotate(angle);
-          ctx.fillStyle = s.kind === "emoji" ? "rgba(255,255,255,0.06)" : s.color;
-          roundRect(ctx, s.w, s.h, CARD_RADIUS);
-          ctx.fill();
-          ctx.lineWidth = BORDER_WIDTH;
-          ctx.strokeStyle = "rgba(255,255,255,0.22)";
-          ctx.stroke();
           if (s.kind === "emoji") {
+            ctx.fillStyle = "rgba(255,255,255,0.10)";
+            roundRect(ctx, s.w, s.h, CARD_RADIUS);
+            ctx.fill();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = "rgba(255,255,255,0.28)";
+            ctx.stroke();
             ctx.font = `${EMOJI_FONT_PX}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(s.content, 0, 2);
+            ctx.fillStyle = "#fff";
+            ctx.fillText(s.content, 0, 1);
           } else {
-            ctx.font = `600 ${TEXT_FONT_PX}px Kanit, sans-serif`;
-            ctx.fillStyle = STICKER_TEXT_COLOR;
+            ctx.fillStyle = s.color;
+            roundRect(ctx, s.w, s.h, CARD_RADIUS);
+            ctx.fill();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = "rgba(0,0,0,0.35)";
+            ctx.stroke();
+            ctx.font = `600 ${TEXT_FONT_PX}px Kanit, system-ui, sans-serif`;
+            ctx.fillStyle = "#111827";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             const startY = -((s.lines.length - 1) * TEXT_LINE_H) / 2;
@@ -227,15 +217,13 @@ export default function SupportWall() {
       raf = requestAnimationFrame(draw);
 
       onResize = () => {
-        if (!render || !container) return;
-        const nw = container.clientWidth;
-        const nh = container.clientHeight;
-        render.canvas.width = nw * (window.devicePixelRatio || 1);
-        render.canvas.height = nh * (window.devicePixelRatio || 1);
-        render.options.width = nw;
-        render.options.height = nh;
-        M.Body.setPosition(walls[0], { x: nw / 2, y: nh + WALL_THICKNESS / 2 });
-        M.Body.setPosition(walls[2], { x: nw + WALL_THICKNESS / 2, y: nh / 2 });
+        if (!container) return;
+        w = container.clientWidth;
+        h = container.clientHeight;
+        sizeCanvas();
+        M.Body.setPosition(floor, { x: w / 2, y: h + WALL_THICKNESS / 2 - 6 });
+        M.Body.setPosition(right, { x: w + WALL_THICKNESS / 2, y: h / 2 });
+        M.Body.setPosition(left, { x: -WALL_THICKNESS / 2, y: h / 2 });
       };
       window.addEventListener("resize", onResize);
     })();
@@ -244,18 +232,13 @@ export default function SupportWall() {
       disposed = true;
       cancelAnimationFrame(raf);
       if (onResize) window.removeEventListener("resize", onResize);
-      if (render) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (render as any).canvas && null;
-        import("matter-js").then((M) => {
-          if (render) M.Render.stop(render);
-          if (runner) M.Runner.stop(runner);
-          if (engine) {
-            M.World.clear(engine.world, false);
-            M.Engine.clear(engine);
-          }
-        });
-      }
+      import("matter-js").then((M) => {
+        if (runner) M.Runner.stop(runner);
+        if (engine) {
+          M.World.clear(engine.world, false);
+          M.Engine.clear(engine);
+        }
+      });
       stickersRef.current = [];
       addRef.current = null;
     };
@@ -265,34 +248,30 @@ export default function SupportWall() {
     e.preventDefault();
     const v = value.trim();
     if (!v) return;
-    addRef.current?.("text", v.slice(0, 60));
+    addRef.current?.("text", v.slice(0, 48));
     setValue("");
   };
 
   return (
-    <motion.div
+    <div
       ref={containerRef}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className="relative w-full aspect-square max-w-[290px] rounded-[32px] overflow-hidden"
+      className="relative w-full max-w-[300px] overflow-hidden rounded-[28px]"
       style={{
+        aspectRatio: "1 / 1",
         touchAction: "none",
-        border: "1px solid rgba(215,226,234,0.15)",
+        border: "1px solid rgba(215,226,234,0.14)",
         background:
-          "radial-gradient(120% 100% at 50% 0%, rgba(118,33,176,0.35) 0%, rgba(12,12,12,0) 55%), #0C0C0C",
-        boxShadow: "0 40px 120px -40px rgba(182,0,168,0.35)",
+          "radial-gradient(120% 100% at 50% 0%, rgba(118,33,176,0.28) 0%, rgba(12,12,12,0) 60%), #0C0C0C",
       }}
     >
-      <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" />
+      <canvas ref={canvasRef} className="absolute inset-0 block" />
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-end p-3">
         <form
           onSubmit={submit}
           className="pointer-events-auto flex w-full items-center gap-2 rounded-full p-1"
           style={{
-            background: "rgba(0,0,0,0.85)",
-            border: "1.5px solid rgba(255,255,255,0.35)",
-            boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
+            background: "rgba(0,0,0,0.8)",
+            border: "1px solid rgba(255,255,255,0.28)",
           }}
         >
           <input
@@ -311,6 +290,6 @@ export default function SupportWall() {
           </button>
         </form>
       </div>
-    </motion.div>
+    </div>
   );
 }
