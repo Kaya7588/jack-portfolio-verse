@@ -15,6 +15,13 @@ const PRELOAD_IMAGES = [
 ];
 
 export const Route = createFileRoute("/onboarding")({
+  validateSearch: (s: Record<string, unknown>) => {
+    const r = typeof s.redirect === "string" && s.redirect.startsWith("/") && !s.redirect.startsWith("//")
+      ? s.redirect
+      : undefined;
+    const force = s.force === "1" || s.force === "true";
+    return { redirect: r as string | undefined, force };
+  },
   head: () => ({
     meta: [
       { title: "Arya Premium — Onboarding" },
@@ -32,6 +39,7 @@ export const Route = createFileRoute("/onboarding")({
   }),
   component: OnboardingPage,
 });
+
 
 type Phase = "features" | "language" | "theme" | "currency" | "done";
 
