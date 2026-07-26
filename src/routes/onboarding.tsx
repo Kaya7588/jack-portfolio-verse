@@ -41,8 +41,8 @@ export const Route = createFileRoute("/onboarding")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      ...PRELOAD_IMAGES.map((href) => ({ rel: "preload", as: "image", href, fetchpriority: "high" })),
-      { rel: "preload", as: "image", href: "https://files.catbox.moe/ug9azb.jpg", fetchpriority: "high" },
+      ...PRELOAD_IMAGES.map((href) => ({ rel: "preload", as: "image", href, fetchPriority: "high" })),
+      { rel: "preload", as: "image", href: "https://files.catbox.moe/ug9azb.jpg", fetchPriority: "high" },
       { rel: "preconnect", href: "https://files.catbox.moe" },
     ],
   }),
@@ -270,7 +270,9 @@ function OnboardingPage() {
     if (!tg) return;
     try {
       tg.ready?.(); tg.expand?.();
-      tg.setHeaderColor?.("#0C0C0C"); tg.setBackgroundColor?.("#0C0C0C");
+      if (isTelegramVersionAtLeast(tg, "6.1")) {
+        tg.setHeaderColor?.("#0C0C0C"); tg.setBackgroundColor?.("#0C0C0C");
+      }
       if (tg.viewportStableHeight) setVh(tg.viewportStableHeight);
       const onVp = () => { if (tg.viewportStableHeight) setVh(tg.viewportStableHeight); };
       tg.onEvent?.("viewportChanged", onVp);

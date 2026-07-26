@@ -33,6 +33,17 @@ const OPENING_CARDS = [
 
 const FLOATING_EMOJIS = ["🎧", "💬", "✅", "🙌", "❤️", "⭐", "⚡", "🚀"];
 
+const EMOJI_POSITIONS = [
+  { left: 7, top: 22 },
+  { left: 78, top: 22 },
+  { left: 12, top: 43 },
+  { left: 80, top: 45 },
+  { left: 8, top: 64 },
+  { left: 77, top: 66 },
+  { left: 37, top: 18 },
+  { left: 58, top: 72 },
+];
+
 export function ReturningUserSplash({
   title,
   minH = "100dvh",
@@ -64,25 +75,25 @@ export function ReturningUserSplash({
         {FLOATING_EMOJIS.map((emoji, i) => (
           <motion.div
             key={`${emoji}-${i}`}
-            className="absolute grid place-items-center rounded-3xl text-[24px]"
+            className="absolute grid place-items-center rounded-3xl text-[30px]"
             initial={{ opacity: 0, scale: 0.72, y: 18, rotate: -8 }}
             animate={{
-              opacity: [0, 0.9, 0.72, 0.9],
+              opacity: [0, 1, 0.82, 1],
               scale: [0.72, 1, 0.94, 1],
               y: [18, -10, 8, -14],
               rotate: [-8, 8, -5, 6],
             }}
             transition={{ duration: 4.4 + i * 0.18, repeat: Infinity, ease: "easeInOut", delay: i * 0.16 }}
             style={{
-              left: `${8 + (i % 4) * 25}%`,
-              top: `${10 + Math.floor(i / 4) * 58 + (i % 2) * 8}%`,
-              width: 46,
-              height: 46,
-              background: "linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05))",
-              border: "1px solid rgba(255,255,255,0.20)",
+              left: `${EMOJI_POSITIONS[i]?.left ?? 10}%`,
+              top: `${EMOJI_POSITIONS[i]?.top ?? 20}%`,
+              width: 58,
+              height: 58,
+              background: "linear-gradient(145deg, rgba(255,255,255,0.26), rgba(255,255,255,0.08))",
+              border: "1px solid rgba(255,255,255,0.26)",
               boxShadow:
-                "0 18px 32px -16px rgba(182,0,168,0.65), inset 0 8px 12px rgba(255,255,255,0.18), inset 0 -10px 16px rgba(0,0,0,0.28)",
-              filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.42))",
+                "0 22px 40px -16px rgba(182,0,168,0.82), inset 0 10px 14px rgba(255,255,255,0.22), inset 0 -12px 18px rgba(0,0,0,0.30)",
+              filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.52))",
             }}
           >
             {emoji}
