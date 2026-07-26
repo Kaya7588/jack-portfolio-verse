@@ -142,6 +142,8 @@ function OnboardingPage() {
   const [hydrated, setHydrated] = useState(false);
   const [insets, setInsets] = useState({ top: 0, bottom: 0 });
   const [vh, setVh] = useState<number | null>(null);
+  const [exiting, setExiting] = useState(false);
+
 
   const t = DICTS[lang];
 
@@ -213,8 +215,10 @@ function OnboardingPage() {
   const finishOnboarding = useCallback(() => {
     haptic("success");
     savePrefs({ lang, theme, currency, completed: true });
-    navigate({ to: "/" });
+    setExiting(true);
+    window.setTimeout(() => navigate({ to: "/" }), 620);
   }, [lang, theme, currency, navigate]);
+
 
   const advance = useCallback(() => {
     haptic("medium");
@@ -525,7 +529,7 @@ function SelectPane({
           {subtitle}
         </p>
       </div>
-      <div role="radiogroup" className="flex flex-col gap-3 flex-1">
+      <div role="radiogroup" className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto pb-3 -mx-1 px-1" style={{ scrollbarWidth: "thin" }}>
         {options.map((o, i) => {
           const selected = value === o.id;
           return (
