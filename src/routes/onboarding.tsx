@@ -186,8 +186,11 @@ const MICROCOPY = {
 };
 
 function OnboardingPage() {
-
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const redirectTo = search.redirect ?? "/";
+  const forceOnboarding = search.force;
+
   const [phase, setPhase] = useState<Phase>("features");
   const [slide, setSlide] = useState(0);
   const [lang, setLang] = useState<LangId>("en");
@@ -197,21 +200,47 @@ function OnboardingPage() {
   const [insets, setInsets] = useState({ top: 0, bottom: 0 });
   const [vh, setVh] = useState<number | null>(null);
   const [exiting, setExiting] = useState(false);
+  const [currencyQuery, setCurrencyQuery] = useState("");
 
+  // Splash for returning users; deep-link customize/skip prompt for new users with a redirect.
+  const [showSplash, setShowSplash] = useState(false);
+  const [showDeepPrompt, setShowDeepPrompt] = useState(false);
+  const variantRef = useRef<"A" | "B">("A");
 
   const t = DICTS[lang];
 
   useEffect(() => {
+    variantRef.current = abVariant();
+    track("onboarding_ab_assigned", { variant: variantRef.current });
+
     const saved = loadPrefs();
     if (saved) {
       setLang(saved.lang); setTheme(saved.theme); setCurrency(saved.currency);
-      if (saved.completed) {
-        navigate({ to: "/" });
+      if (saved.completed && !forceOnboarding) {
+        // Returning user → brief splash, then straight into app / deep link.
+        setShowSplash(true);
+        track("onboarding_splash_view", { redirect: redirectTo });
+        window.setTimeout(() => {
+          track("onboarding_splash_autoenter", { redirect: redirectTo });
+          navigate({ to: redirectTo });
+        }, 3200);
         return;
       }
+    } else {
+      // First-time — apply smart currency default.
+      setCurrency(guessCurrency());
     }
+
+    // Deep link from product → give user choice to customize or skip onboarding.
+    if (search.redirect && !forceOnboarding) {
+      setShowDeepPrompt(true);
+      track("onboarding_deeplink_prompt_view", { redirect: redirectTo });
+    }
+
     setHydrated(true);
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   useEffect(() => {
     if (!hydrated) return;
