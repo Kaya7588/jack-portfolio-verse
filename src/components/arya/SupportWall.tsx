@@ -27,13 +27,22 @@ const CARD_RADIUS = 12;
 const PALETTE = ["#FDE68A", "#BBF7D0", "#FBCFE8", "#C7D2FE", "#BAE6FD", "#FED7AA"];
 
 const SEED_TEXTS = [
-  "Agent replied in 20s",
-  "Episode recovered",
-  "UTR verified fast",
-  "24/7 real humans",
-  "Refund sorted",
+  "Agent replied in 18s ⚡",
+  "Episode recovered in 2 min",
+  "UTR auto-verified in 12s",
+  "24/7 real humans, no bots",
+  "Refund sorted same day",
+  "Missing series delivered",
 ];
-const SEED_EMOJIS = ["🎧", "💬", "✅", "🙌", "❤️", "⭐"];
+const SEED_EMOJIS = ["🎧", "💬", "✅", "🙌", "❤️", "⭐", "⚡"];
+
+const AUTO_REPLIES = [
+  "On it! Agent joining…",
+  "Got you — checking now ✅",
+  "Reply in <20s ⚡",
+  "Sending your episode 🎧",
+];
+
 
 type StickerKind = "text" | "emoji";
 interface Sticker {
@@ -250,6 +259,9 @@ export default function SupportWall() {
     if (!v) return;
     addRef.current?.("text", v.slice(0, 48));
     setValue("");
+    // Auto-reply preview — feels like a live agent replying.
+    const reply = AUTO_REPLIES[Math.floor(Math.random() * AUTO_REPLIES.length)];
+    window.setTimeout(() => addRef.current?.("text", reply), 850);
   };
 
   return (
@@ -266,6 +278,31 @@ export default function SupportWall() {
       }}
     >
       <canvas ref={canvasRef} className="absolute inset-0 block" />
+
+      {/* SLA badge */}
+      <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full px-2.5 py-1"
+        style={{
+          background: "rgba(0,0,0,0.55)",
+          border: "1px solid rgba(255,255,255,0.18)",
+          backdropFilter: "blur(6px)",
+        }}
+      >
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-400" />
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-white">Avg reply · 18s</span>
+      </div>
+      <div className="pointer-events-none absolute right-3 top-3 rounded-full px-2.5 py-1"
+        style={{
+          background: "rgba(0,0,0,0.55)",
+          border: "1px solid rgba(255,255,255,0.18)",
+          backdropFilter: "blur(6px)",
+        }}
+      >
+        <span className="text-[10px] font-bold uppercase tracking-wider text-white">24/7 live</span>
+      </div>
+
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-end p-3">
         <form
           onSubmit={submit}
@@ -278,7 +315,7 @@ export default function SupportWall() {
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Ask support…"
+            placeholder="Ask support — reply in seconds"
             className="min-w-0 flex-1 bg-transparent px-3 text-[12px] font-medium outline-none"
             style={{ color: "#fff" }}
           />
@@ -294,3 +331,4 @@ export default function SupportWall() {
     </div>
   );
 }
+

@@ -16,8 +16,16 @@ export type AryaEvent =
   | "onboarding_select_language"
   | "onboarding_select_theme"
   | "onboarding_select_currency"
+  | "onboarding_currency_search"
   | "onboarding_complete"
-  | "onboarding_dropoff";
+  | "onboarding_dropoff"
+  | "onboarding_splash_view"
+  | "onboarding_splash_autoenter"
+  | "onboarding_deeplink_prompt_view"
+  | "onboarding_deeplink_skip"
+  | "onboarding_deeplink_customize"
+  | "onboarding_ab_assigned";
+
 
 type Props = Record<string, string | number | boolean | null | undefined>;
 
