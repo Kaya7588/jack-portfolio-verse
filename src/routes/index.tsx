@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Jack — 3D Creator" },
       {
         property: "og:description",
-        content: "A 3D creator driven by crafting striking and unforgettable projects.",
+        content: "Portfolio of Jack, a 3D creator crafting striking and unforgettable projects across branding, motion, and web design.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
