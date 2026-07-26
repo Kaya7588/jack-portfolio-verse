@@ -341,10 +341,11 @@ function OnboardingPage() {
 
   useEffect(() => {
     const tg = getTelegramMiniApp();
-    if (!tg?.BackButton || !isTelegramVersionAtLeast(tg, "6.1")) return;
-    if (canBack) tg.BackButton.show(); else tg.BackButton.hide();
-    tg.BackButton.onClick(goBack);
-    return () => { tg.BackButton.offClick(goBack); };
+    const backButton = tg?.BackButton;
+    if (!backButton || !isTelegramVersionAtLeast(tg, "6.1")) return;
+    if (canBack) backButton.show(); else backButton.hide();
+    backButton.onClick(goBack);
+    return () => { backButton.offClick(goBack); };
   }, [canBack, goBack]);
 
   const minH = vh ? `${vh}px` : "100dvh";
