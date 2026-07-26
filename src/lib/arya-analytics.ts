@@ -2,7 +2,7 @@
  * Lightweight onboarding analytics.
  * - Pushes events to window.dataLayer (GA4 / GTM ready)
  * - Emits a CustomEvent("arya:analytics") so any provider can subscribe
- * - Sends to Telegram.WebApp.sendData when running inside Telegram
+ * - Avoids Telegram.WebApp.sendData because it closes Mini Apps in many bot flows
  * - Buffers to sessionStorage so drop-off can be replayed
  * - Console-logs in dev
  */
@@ -78,15 +78,6 @@ export function track(event: AryaEvent, props: Props = {}) {
     // Generic subscriber hook
     try {
       window.dispatchEvent(new CustomEvent("arya:analytics", { detail: payload }));
-    } catch {
-      /* noop */
-    }
-
-    // Telegram bot side
-    const tg = (window as unknown as { Telegram?: { WebApp?: { sendData?: (s: string) => void } } })
-      .Telegram?.WebApp;
-    try {
-      tg?.sendData?.(JSON.stringify({ kind: "analytics", ...payload }));
     } catch {
       /* noop */
     }
