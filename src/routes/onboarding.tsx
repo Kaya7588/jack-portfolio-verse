@@ -465,7 +465,20 @@ function OnboardingPage() {
                 key="cur"
                 title={t.currencyTitle}
                 subtitle={t.currencySub}
-                options={CURRENCIES.map((c) => ({
+                headerExtra={
+                  <CurrencySearch
+                    value={currencyQuery}
+                    onChange={(v) => {
+                      setCurrencyQuery(v);
+                      if (v.trim().length >= 2) track("onboarding_currency_search", { q: v.slice(0, 24) });
+                    }}
+                  />
+                }
+                options={CURRENCIES.filter((c) => {
+                  const q = currencyQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return c.label.toLowerCase().includes(q) || c.sub.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
+                }).map((c) => ({
                   id: c.id,
                   label: c.label,
                   sub: `${c.sub} — ${t.sample} ${formatPrice(499, c.id, lang)}`,
@@ -477,6 +490,7 @@ function OnboardingPage() {
             )}
           </AnimatePresence>
         </div>
+
 
         <div className="shrink-0 pt-5 flex flex-col items-center gap-4">
           {phase === "features" && (
