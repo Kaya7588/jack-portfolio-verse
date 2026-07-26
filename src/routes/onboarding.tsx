@@ -844,3 +844,188 @@ function DonePane({ lang, theme, currency }: { lang: LangId; theme: ThemeId; cur
     </motion.div>
   );
 }
+
+// ---------- Onboarding progress bar ----------
+const PHASE_ORDER: Phase[] = ["features", "language", "theme", "currency"];
+function StepBar({ phase }: { phase: Phase }) {
+  const idx = Math.max(0, PHASE_ORDER.indexOf(phase));
+  const pct = ((idx + 1) / PHASE_ORDER.length) * 100;
+  const labels: Record<Phase, string> = {
+    features: "Intro",
+    language: "Language",
+    theme: "Theme",
+    currency: "Currency",
+    done: "Done",
+  };
+  return (
+    <div className="mt-2 mb-1 shrink-0" aria-label="Onboarding progress">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ opacity: 0.7 }}>
+          {labels[phase]}
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ opacity: 0.55 }}>
+          {Math.min(idx + 1, PHASE_ORDER.length)} / {PHASE_ORDER.length}
+        </span>
+      </div>
+      <div className="h-1 w-full rounded-full overflow-hidden" style={{ background: "rgba(215,226,234,0.14)" }}>
+        <motion.div
+          initial={false}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
+          style={{
+            height: "100%",
+            background: "linear-gradient(90deg, #B600A8 0%, #7621B0 100%)",
+            borderRadius: 999,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ---------- Currency search input ----------
+function CurrencySearch({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div
+      className="flex items-center gap-2 rounded-2xl px-3 py-2.5"
+      style={{
+        border: "1px solid rgba(215,226,234,0.14)",
+        background: "rgba(215,226,234,0.04)",
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.55 }}>
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+      </svg>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Search currency, code or country"
+        className="flex-1 min-w-0 bg-transparent text-sm outline-none"
+        style={{ color: "#D7E2EA" }}
+        aria-label="Search currency"
+      />
+      {value && (
+        <button
+          onClick={() => onChange("")}
+          aria-label="Clear search"
+          className="text-xs px-2 py-0.5 rounded-full"
+          style={{ background: "rgba(215,226,234,0.08)", color: "#D7E2EA" }}
+        >
+          Clear
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ---------- Splash for returning users ----------
+function SplashScreen({ minH, insets, title }: { minH: string; insets: { top: number; bottom: number }; title: string }) {
+  const FirstScene = SCENES[0];
+  return (
+    <div
+      className="relative w-full flex flex-col items-center justify-center overflow-hidden"
+      style={{
+        height: minH,
+        background: "#0C0C0C",
+        color: "#D7E2EA",
+        fontFamily: "'Kanit', 'Noto Sans Devanagari', sans-serif",
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
+        className="flex flex-col items-center gap-8 px-6 w-full max-w-[440px]"
+      >
+        <div className="w-full flex items-center justify-center">
+          <FirstScene />
+        </div>
+        <h1
+          className="hero-heading font-black uppercase leading-[0.95] tracking-tight text-center"
+          style={{ fontSize: "clamp(1.8rem, 7vw, 2.4rem)" }}
+        >
+          {title}
+        </h1>
+        <div className="h-1 w-40 rounded-full overflow-hidden" style={{ background: "rgba(215,226,234,0.14)" }}>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 3.2, ease: "linear" }}
+            style={{ height: "100%", background: "linear-gradient(90deg,#B600A8,#7621B0)" }}
+          />
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ---------- Deep-link customize/skip prompt ----------
+function DeeplinkPrompt({
+  minH, insets, redirectTo, onSkip, onCustomize,
+}: {
+  minH: string;
+  insets: { top: number; bottom: number };
+  redirectTo: string;
+  onSkip: () => void;
+  onCustomize: () => void;
+}) {
+  return (
+    <div
+      className="relative w-full flex justify-center overflow-hidden"
+      style={{
+        height: minH,
+        background: "#0C0C0C",
+        color: "#D7E2EA",
+        fontFamily: "'Kanit', 'Noto Sans Devanagari', sans-serif",
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
+      <div className="relative w-full max-w-[440px] flex flex-col px-6 pt-8 pb-6" style={{ height: `calc(${minH} - ${insets.top + insets.bottom}px)` }}>
+        <div className="flex-1 flex flex-col justify-center gap-6">
+          <span className="text-[11px] font-bold uppercase tracking-widest" style={{ opacity: 0.6 }}>
+            Deep link detected
+          </span>
+          <h1
+            className="hero-heading font-black uppercase leading-[0.95] tracking-tight"
+            style={{ fontSize: "clamp(2rem, 9vw, 2.8rem)" }}
+          >
+            Jump straight in, or customize first?
+          </h1>
+          <p className="font-light leading-relaxed" style={{ opacity: 0.7, fontSize: "1rem" }}>
+            You're heading to <span className="font-semibold" style={{ opacity: 0.95 }}>{redirectTo}</span>.
+            Skip onboarding to go directly, or take 30 seconds to pick language, theme and currency.
+          </p>
+        </div>
+        <div className="shrink-0 flex flex-col gap-3">
+          <button
+            onClick={onSkip}
+            className="w-full rounded-full py-4 text-base text-white font-medium uppercase tracking-widest"
+            style={{
+              background: "linear-gradient(123deg, #18011F 7%, #B600A8 37%, #7621B0 72%, #BE4C00 100%)",
+              boxShadow: "0px 4px 4px rgba(181, 1, 167, 0.25), 4px 4px 12px #7721B1 inset",
+              outline: "2px solid #ffffff",
+              outlineOffset: "-3px",
+            }}
+          >
+            Skip &amp; open product
+          </button>
+          <button
+            onClick={onCustomize}
+            className="w-full rounded-full py-4 text-sm font-medium uppercase tracking-widest"
+            style={{
+              background: "transparent",
+              color: "#D7E2EA",
+              border: "1px solid rgba(215,226,234,0.28)",
+            }}
+          >
+            Customize first
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
