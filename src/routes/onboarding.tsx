@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useMotionValue, useTransform, animate } from "
 import { ArrowLeft, Check } from "lucide-react";
 import { DICTS, LANG_META, type LangId } from "@/lib/arya-i18n";
 import { SCENES } from "@/components/arya/Scenes";
+import { track } from "@/lib/arya-analytics";
 
 const PRELOAD_IMAGES = [
   "/__l5e/assets-v1/29f3c4fe-bf8b-493c-a3ac-f03a9cc93263/file_0000000013e8820ea802a31d37cc1fdd.png",
@@ -23,7 +24,11 @@ export const Route = createFileRoute("/onboarding")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: PRELOAD_IMAGES.map((href) => ({ rel: "preload", as: "image", href, fetchpriority: "high" })),
+    links: [
+      ...PRELOAD_IMAGES.map((href) => ({ rel: "preload", as: "image", href, fetchpriority: "high" })),
+      { rel: "preload", as: "image", href: "https://files.catbox.moe/ug9azb.jpg", fetchpriority: "high" },
+      { rel: "preconnect", href: "https://files.catbox.moe" },
+    ],
   }),
   component: OnboardingPage,
 });
@@ -178,6 +183,26 @@ function OnboardingPage() {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // ---- Analytics: session start + drop-off detection ----
+  const completedRef = useRef(false);
+  useEffect(() => {
+    track("onboarding_start", { lang, theme, currency });
+    const onLeave = () => {
+      if (!completedRef.current) {
+        track("onboarding_dropoff", { phase, slide, lang, theme, currency });
+      }
+    };
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Track each step view (phase + slide within features)
+  useEffect(() => {
+    track("onboarding_step_view", { phase, slide: phase === "features" ? slide : null });
+  }, [phase, slide]);
+
+
   useEffect(() => {
     const tg = getTg();
     if (!tg) return;
@@ -213,16 +238,23 @@ function OnboardingPage() {
 
   const goBack = useCallback(() => {
     haptic("light");
+    track("onboarding_step_back", { phase, slide });
     if (phase === "features") { if (slide > 0) setSlide(slide - 1); return; }
     if (phase === "language") { setPhase("features"); setSlide(featCount - 1); return; }
     if (phase === "theme") { setPhase("language"); return; }
     if (phase === "currency") { setPhase("theme"); return; }
   }, [phase, slide, featCount]);
 
-  const goNextFromFeatures = useCallback(() => { haptic("medium"); setPhase("language"); }, []);
+  const goNextFromFeatures = useCallback(() => {
+    haptic("medium");
+    track("onboarding_step_next", { from: "features", slide });
+    setPhase("language");
+  }, [slide]);
 
   const finishOnboarding = useCallback(() => {
     haptic("success");
+    completedRef.current = true;
+    track("onboarding_complete", { lang, theme, currency });
     savePrefs({ lang, theme, currency, completed: true });
     setExiting(true);
     window.setTimeout(() => navigate({ to: "/" }), 620);
@@ -231,6 +263,7 @@ function OnboardingPage() {
 
   const advance = useCallback(() => {
     haptic("medium");
+    track("onboarding_step_next", { from: phase });
     if (phase === "language") return setPhase("theme");
     if (phase === "theme") return setPhase("currency");
     if (phase === "currency") return finishOnboarding();
@@ -307,7 +340,7 @@ function OnboardingPage() {
                   id, label: LANG_META[id].label, sub: LANG_META[id].sub,
                 }))}
                 value={lang}
-                onChange={(v) => { haptic("select"); setLang(v as LangId); }}
+                onChange={(v) => { haptic("select"); setLang(v as LangId); track("onboarding_select_language", { value: v }); }}
               />
             )}
             {phase === "theme" && (
@@ -322,7 +355,7 @@ function OnboardingPage() {
                   accessory: <ThemeSwatch colors={THEME_SWATCHES[id]} />,
                 }))}
                 value={theme}
-                onChange={(v) => { haptic("select"); setTheme(v as ThemeId); }}
+                onChange={(v) => { haptic("select"); setTheme(v as ThemeId); track("onboarding_select_theme", { value: v }); }}
               />
             )}
             {phase === "currency" && (
@@ -337,7 +370,7 @@ function OnboardingPage() {
                   accessory: <CurrencyGlyph symbol={c.symbol} />,
                 }))}
                 value={currency}
-                onChange={(v) => { haptic("select"); setCurrency(v as CurrencyId); }}
+                onChange={(v) => { haptic("select"); setCurrency(v as CurrencyId); track("onboarding_select_currency", { value: v }); }}
               />
             )}
           </AnimatePresence>
