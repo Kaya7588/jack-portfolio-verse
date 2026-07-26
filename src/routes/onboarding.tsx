@@ -669,9 +669,10 @@ function FeatureSlide({
 type Option = { id: string; label: string; sub?: string; accessory?: React.ReactNode };
 
 function SelectPane({
-  title, subtitle, options, value, onChange,
+  title, subtitle, options, value, onChange, headerExtra,
 }: {
   title: string; subtitle: string; options: Option[]; value: string; onChange: (v: string) => void;
+  headerExtra?: React.ReactNode;
 }) {
   return (
     <motion.div
@@ -681,14 +682,16 @@ function SelectPane({
       transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
       className="flex-1 flex flex-col min-h-0"
     >
-      <div className="pt-6 pb-8 flex flex-col gap-3">
+      <div className="pt-6 pb-5 flex flex-col gap-3 shrink-0">
         <h1 className="hero-heading font-black uppercase leading-[0.95] tracking-tight" style={{ fontSize: "clamp(2rem, 9vw, 2.8rem)" }}>
           {title}
         </h1>
         <p className="font-light leading-relaxed" style={{ color: "#D7E2EA", opacity: 0.65, fontSize: "0.98rem" }}>
           {subtitle}
         </p>
+        {headerExtra}
       </div>
+
       <div role="radiogroup" className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto pb-3 -mx-1 px-1" style={{ scrollbarWidth: "thin" }}>
         {options.map((o, i) => {
           const selected = value === o.id;
