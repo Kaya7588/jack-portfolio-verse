@@ -417,6 +417,10 @@ function OnboardingPage() {
           <div className="h-9 w-9" />
         </div>
 
+        <StepBar phase={phase} />
+
+
+
 
         <div className="flex-1 flex flex-col mt-1 min-h-0">
           <AnimatePresence mode="wait">
