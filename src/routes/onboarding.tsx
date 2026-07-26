@@ -5,6 +5,8 @@ import { ArrowLeft, Check } from "lucide-react";
 import { DICTS, LANG_META, type LangId } from "@/lib/arya-i18n";
 import { SCENES } from "@/components/arya/Scenes";
 import { track } from "@/lib/arya-analytics";
+import { ReturningUserSplash } from "@/components/arya/ReturningUserSplash";
+import { DeepLinkOnboardingPrompt } from "@/components/arya/DeepLinkOnboardingPrompt";
 
 const PRELOAD_IMAGES = [
   "/__l5e/assets-v1/29f3c4fe-bf8b-493c-a3ac-f03a9cc93263/file_0000000013e8820ea802a31d37cc1fdd.png",
@@ -20,7 +22,9 @@ export const Route = createFileRoute("/onboarding")({
       ? s.redirect
       : undefined;
     const force = s.force === "1" || s.force === "true";
-    return { redirect: r as string | undefined, force };
+    const preview =
+      s.preview === "splash" || s.preview === "deeplink" ? (s.preview as "splash" | "deeplink") : undefined;
+    return { redirect: r as string | undefined, force, preview };
   },
   head: () => ({
     meta: [
@@ -213,6 +217,25 @@ function OnboardingPage() {
     variantRef.current = abVariant();
     track("onboarding_ab_assigned", { variant: variantRef.current });
 
+    // Test/preview overrides — let anyone hit ?preview=splash or ?preview=deeplink
+    // to see the returning-user splash or the deep-link prompt without state.
+    if (search.preview === "splash") {
+      setShowSplash(true);
+      track("onboarding_splash_view", { redirect: redirectTo, preview: true });
+      window.setTimeout(() => {
+        track("onboarding_splash_autoenter", { redirect: redirectTo, preview: true });
+        navigate({ to: redirectTo });
+      }, 3200);
+      setHydrated(true);
+      return;
+    }
+    if (search.preview === "deeplink") {
+      setShowDeepPrompt(true);
+      track("onboarding_deeplink_prompt_view", { redirect: redirectTo, preview: true });
+      setHydrated(true);
+      return;
+    }
+
     const saved = loadPrefs();
     if (saved) {
       setLang(saved.lang); setTheme(saved.theme); setCurrency(saved.currency);
@@ -224,6 +247,7 @@ function OnboardingPage() {
           track("onboarding_splash_autoenter", { redirect: redirectTo });
           navigate({ to: redirectTo });
         }, 3200);
+        setHydrated(true);
         return;
       }
     } else {
@@ -362,13 +386,20 @@ function OnboardingPage() {
 
   // Splash for returning users (only 1st scene, no buttons, auto-exits).
   if (showSplash) {
-    return <SplashScreen minH={minH} insets={insets} title={t.features[0].title} />;
+    return (
+      <ReturningUserSplash
+        minH={minH}
+        insets={insets}
+        title={t.features[0].title}
+        onDone={() => navigate({ to: redirectTo })}
+      />
+    );
   }
 
   // Deep-link prompt for new users arriving from a product deep link.
   if (showDeepPrompt) {
     return (
-      <DeeplinkPrompt
+      <DeepLinkOnboardingPrompt
         minH={minH}
         insets={insets}
         redirectTo={redirectTo}
@@ -915,117 +946,6 @@ function CurrencySearch({ value, onChange }: { value: string; onChange: (v: stri
           Clear
         </button>
       )}
-    </div>
-  );
-}
-
-// ---------- Splash for returning users ----------
-function SplashScreen({ minH, insets, title }: { minH: string; insets: { top: number; bottom: number }; title: string }) {
-  const FirstScene = SCENES[0];
-  return (
-    <div
-      className="relative w-full flex flex-col items-center justify-center overflow-hidden"
-      style={{
-        height: minH,
-        background: "#0C0C0C",
-        color: "#D7E2EA",
-        fontFamily: "'Kanit', 'Noto Sans Devanagari', sans-serif",
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-      }}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex flex-col items-center gap-8 px-6 w-full max-w-[440px]"
-      >
-        <div className="w-full flex items-center justify-center">
-          <FirstScene />
-        </div>
-        <h1
-          className="hero-heading font-black uppercase leading-[0.95] tracking-tight text-center"
-          style={{ fontSize: "clamp(1.8rem, 7vw, 2.4rem)" }}
-        >
-          {title}
-        </h1>
-        <div className="h-1 w-40 rounded-full overflow-hidden" style={{ background: "rgba(215,226,234,0.14)" }}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: "100%" }}
-            transition={{ duration: 3.2, ease: "linear" }}
-            style={{ height: "100%", background: "linear-gradient(90deg,#B600A8,#7621B0)" }}
-          />
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-// ---------- Deep-link customize/skip prompt ----------
-function DeeplinkPrompt({
-  minH, insets, redirectTo, onSkip, onCustomize,
-}: {
-  minH: string;
-  insets: { top: number; bottom: number };
-  redirectTo: string;
-  onSkip: () => void;
-  onCustomize: () => void;
-}) {
-  return (
-    <div
-      className="relative w-full flex justify-center overflow-hidden"
-      style={{
-        height: minH,
-        background: "#0C0C0C",
-        color: "#D7E2EA",
-        fontFamily: "'Kanit', 'Noto Sans Devanagari', sans-serif",
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-      }}
-    >
-      <div className="relative w-full max-w-[440px] flex flex-col px-6 pt-8 pb-6" style={{ height: `calc(${minH} - ${insets.top + insets.bottom}px)` }}>
-        <div className="flex-1 flex flex-col justify-center gap-6">
-          <span className="text-[11px] font-bold uppercase tracking-widest" style={{ opacity: 0.6 }}>
-            Deep link detected
-          </span>
-          <h1
-            className="hero-heading font-black uppercase leading-[0.95] tracking-tight"
-            style={{ fontSize: "clamp(2rem, 9vw, 2.8rem)" }}
-          >
-            Jump straight in, or customize first?
-          </h1>
-          <p className="font-light leading-relaxed" style={{ opacity: 0.7, fontSize: "1rem" }}>
-            You're heading to <span className="font-semibold" style={{ opacity: 0.95 }}>{redirectTo}</span>.
-            Skip onboarding to go directly, or take 30 seconds to pick language, theme and currency.
-          </p>
-        </div>
-        <div className="shrink-0 flex flex-col gap-3">
-          <button
-            onClick={onSkip}
-            className="w-full rounded-full py-4 text-base text-white font-medium uppercase tracking-widest"
-            style={{
-              background: "linear-gradient(123deg, #18011F 7%, #B600A8 37%, #7621B0 72%, #BE4C00 100%)",
-              boxShadow: "0px 4px 4px rgba(181, 1, 167, 0.25), 4px 4px 12px #7721B1 inset",
-              outline: "2px solid #ffffff",
-              outlineOffset: "-3px",
-            }}
-          >
-            Skip &amp; open product
-          </button>
-          <button
-            onClick={onCustomize}
-            className="w-full rounded-full py-4 text-sm font-medium uppercase tracking-widest"
-            style={{
-              background: "transparent",
-              color: "#D7E2EA",
-              border: "1px solid rgba(215,226,234,0.28)",
-            }}
-          >
-            Customize first
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
