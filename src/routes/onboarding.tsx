@@ -217,6 +217,25 @@ function OnboardingPage() {
     variantRef.current = abVariant();
     track("onboarding_ab_assigned", { variant: variantRef.current });
 
+    // Test/preview overrides — let anyone hit ?preview=splash or ?preview=deeplink
+    // to see the returning-user splash or the deep-link prompt without state.
+    if (search.preview === "splash") {
+      setShowSplash(true);
+      track("onboarding_splash_view", { redirect: redirectTo, preview: true });
+      window.setTimeout(() => {
+        track("onboarding_splash_autoenter", { redirect: redirectTo, preview: true });
+        navigate({ to: redirectTo });
+      }, 3200);
+      setHydrated(true);
+      return;
+    }
+    if (search.preview === "deeplink") {
+      setShowDeepPrompt(true);
+      track("onboarding_deeplink_prompt_view", { redirect: redirectTo, preview: true });
+      setHydrated(true);
+      return;
+    }
+
     const saved = loadPrefs();
     if (saved) {
       setLang(saved.lang); setTheme(saved.theme); setCurrency(saved.currency);
@@ -228,6 +247,7 @@ function OnboardingPage() {
           track("onboarding_splash_autoenter", { redirect: redirectTo });
           navigate({ to: redirectTo });
         }, 3200);
+        setHydrated(true);
         return;
       }
     } else {
