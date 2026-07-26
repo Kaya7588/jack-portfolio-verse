@@ -323,11 +323,12 @@ function OnboardingPage() {
   const finishOnboarding = useCallback(() => {
     haptic("success");
     completedRef.current = true;
-    track("onboarding_complete", { lang, theme, currency });
+    track("onboarding_complete", { lang, theme, currency, redirect: redirectTo, variant: variantRef.current });
     savePrefs({ lang, theme, currency, completed: true });
     setExiting(true);
-    window.setTimeout(() => navigate({ to: "/" }), 620);
-  }, [lang, theme, currency, navigate]);
+    window.setTimeout(() => navigate({ to: redirectTo }), 620);
+  }, [lang, theme, currency, navigate, redirectTo]);
+
 
 
   const advance = useCallback(() => {
