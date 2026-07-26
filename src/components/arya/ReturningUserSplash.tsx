@@ -22,6 +22,17 @@ export interface ReturningUserSplashProps {
   onDone?: () => void;
 }
 
+const OPENING_CARDS = [
+  { emoji: "🎧", title: "Audio", sub: "Ready" },
+  { emoji: "⚡", title: "Instant", sub: "Delivery" },
+  { emoji: "💬", title: "Support", sub: "Live" },
+  { emoji: "✅", title: "Access", sub: "Synced" },
+  { emoji: "⭐", title: "Premium", sub: "Unlocked" },
+  { emoji: "🙌", title: "Welcome", sub: "Back" },
+];
+
+const FLOATING_EMOJIS = ["🎧", "💬", "✅", "🙌", "❤️", "⭐", "⚡", "🚀"];
+
 export function ReturningUserSplash({
   title,
   minH = "100dvh",
@@ -49,11 +60,41 @@ export function ReturningUserSplash({
         paddingBottom: insets.bottom,
       }}
     >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        {FLOATING_EMOJIS.map((emoji, i) => (
+          <motion.div
+            key={`${emoji}-${i}`}
+            className="absolute grid place-items-center rounded-3xl text-[24px]"
+            initial={{ opacity: 0, scale: 0.72, y: 18, rotate: -8 }}
+            animate={{
+              opacity: [0, 0.9, 0.72, 0.9],
+              scale: [0.72, 1, 0.94, 1],
+              y: [18, -10, 8, -14],
+              rotate: [-8, 8, -5, 6],
+            }}
+            transition={{ duration: 4.4 + i * 0.18, repeat: Infinity, ease: "easeInOut", delay: i * 0.16 }}
+            style={{
+              left: `${8 + (i % 4) * 25}%`,
+              top: `${10 + Math.floor(i / 4) * 58 + (i % 2) * 8}%`,
+              width: 46,
+              height: 46,
+              background: "linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05))",
+              border: "1px solid rgba(255,255,255,0.20)",
+              boxShadow:
+                "0 18px 32px -16px rgba(182,0,168,0.65), inset 0 8px 12px rgba(255,255,255,0.18), inset 0 -10px 16px rgba(0,0,0,0.28)",
+              filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.42))",
+            }}
+          >
+            {emoji}
+          </motion.div>
+        ))}
+      </div>
+
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex flex-col items-center gap-8 px-6 w-full max-w-[440px]"
+        className="relative z-10 flex w-full max-w-[440px] flex-col items-center gap-6 px-6"
       >
         <div className="w-full flex items-center justify-center">
           <FirstScene />
@@ -64,6 +105,35 @@ export function ReturningUserSplash({
         >
           {title}
         </h1>
+
+        <div className="w-full overflow-hidden" aria-label="Opening status">
+          <motion.div
+            className="flex gap-3"
+            animate={{ x: [0, -408] }}
+            transition={{ duration: 8.5, repeat: Infinity, ease: "linear" }}
+          >
+            {[...OPENING_CARDS, ...OPENING_CARDS].map((card, i) => (
+              <div
+                key={`${card.title}-${i}`}
+                className="flex h-[82px] min-w-[124px] items-center gap-3 rounded-3xl px-3"
+                style={{
+                  background: "linear-gradient(145deg, rgba(215,226,234,0.13), rgba(215,226,234,0.035))",
+                  border: "1px solid rgba(215,226,234,0.16)",
+                  boxShadow: "inset 0 10px 16px rgba(255,255,255,0.06), inset 0 -12px 18px rgba(0,0,0,0.22)",
+                }}
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[23px]" style={{ background: "rgba(255,255,255,0.10)" }}>
+                  {card.emoji}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-[13px] font-bold uppercase leading-tight tracking-wider text-white">{card.title}</span>
+                  <span className="block truncate text-[11px] font-medium uppercase tracking-wider" style={{ color: "rgba(215,226,234,0.58)" }}>{card.sub}</span>
+                </span>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
         <div
           className="h-1 w-40 rounded-full overflow-hidden"
           style={{ background: "rgba(215,226,234,0.14)" }}
@@ -79,5 +149,7 @@ export function ReturningUserSplash({
     </div>
   );
 }
+
+export const AppOpeningScreen = ReturningUserSplash;
 
 export default ReturningUserSplash;

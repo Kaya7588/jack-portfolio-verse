@@ -7,6 +7,13 @@ import { SCENES } from "@/components/arya/Scenes";
 import { track } from "@/lib/arya-analytics";
 import { ReturningUserSplash } from "@/components/arya/ReturningUserSplash";
 import { DeepLinkOnboardingPrompt } from "@/components/arya/DeepLinkOnboardingPrompt";
+import {
+  getTelegramMiniApp,
+  isSafeInternalRedirect,
+  isTelegramVersionAtLeast,
+  resolveTelegramDeepLink,
+  safeTelegramHaptic,
+} from "@/lib/telegram-miniapp-deeplink";
 
 const PRELOAD_IMAGES = [
   "/__l5e/assets-v1/29f3c4fe-bf8b-493c-a3ac-f03a9cc93263/file_0000000013e8820ea802a31d37cc1fdd.png",
@@ -18,9 +25,7 @@ const PRELOAD_IMAGES = [
 
 export const Route = createFileRoute("/onboarding")({
   validateSearch: (s: Record<string, unknown>) => {
-    const r = typeof s.redirect === "string" && s.redirect.startsWith("/") && !s.redirect.startsWith("//")
-      ? s.redirect
-      : undefined;
+    const r = typeof s.redirect === "string" && isSafeInternalRedirect(s.redirect) ? s.redirect : undefined;
     const force = s.force === "1" || s.force === "true";
     const preview =
       s.preview === "splash" || s.preview === "deeplink" ? (s.preview as "splash" | "deeplink") : undefined;
@@ -107,40 +112,8 @@ function formatPrice(inr: number, currencyId: string, lang: LangId) {
   }
 }
 
-// ---- Telegram WebApp typings (minimal) ----
-type TgWebApp = {
-  ready: () => void;
-  expand: () => void;
-  BackButton: { show: () => void; hide: () => void; onClick: (cb: () => void) => void; offClick: (cb: () => void) => void };
-  HapticFeedback?: {
-    impactOccurred: (style: "light" | "medium" | "heavy" | "rigid" | "soft") => void;
-    selectionChanged: () => void;
-    notificationOccurred: (type: "success" | "warning" | "error") => void;
-  };
-  viewportStableHeight?: number;
-  onEvent?: (ev: string, cb: () => void) => void;
-  offEvent?: (ev: string, cb: () => void) => void;
-  setHeaderColor?: (c: string) => void;
-  setBackgroundColor?: (c: string) => void;
-};
-
-function getTg(): TgWebApp | null {
-  if (typeof window === "undefined") return null;
-  return (window as unknown as { Telegram?: { WebApp?: TgWebApp } }).Telegram?.WebApp ?? null;
-}
-
 function haptic(kind: "select" | "light" | "medium" | "success") {
-  const h = getTg()?.HapticFeedback;
-  if (h) {
-    if (kind === "select") h.selectionChanged();
-    else if (kind === "success") h.notificationOccurred("success");
-    else h.impactOccurred(kind);
-    return;
-  }
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    const map = { select: 8, light: 10, medium: 18, success: [12, 40, 18] } as const;
-    try { navigator.vibrate(map[kind] as number | number[]); } catch { /* noop */ }
-  }
+  safeTelegramHaptic(kind);
 }
 
 type SavedPrefs = { lang: LangId; theme: ThemeId; currency: CurrencyId; completed: boolean };
@@ -192,7 +165,7 @@ const MICROCOPY = {
 function OnboardingPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const redirectTo = search.redirect ?? "/";
+  const [redirectTo, setRedirectTo] = useState(search.redirect ?? "/");
   const forceOnboarding = search.force;
 
   const [phase, setPhase] = useState<Phase>("features");
@@ -217,21 +190,21 @@ function OnboardingPage() {
     variantRef.current = abVariant();
     track("onboarding_ab_assigned", { variant: variantRef.current });
 
+    const resolved = resolveTelegramDeepLink(search.redirect ?? "/");
+    const target = resolved.redirect;
+    setRedirectTo(target);
+
     // Test/preview overrides — let anyone hit ?preview=splash or ?preview=deeplink
     // to see the returning-user splash or the deep-link prompt without state.
     if (search.preview === "splash") {
       setShowSplash(true);
-      track("onboarding_splash_view", { redirect: redirectTo, preview: true });
-      window.setTimeout(() => {
-        track("onboarding_splash_autoenter", { redirect: redirectTo, preview: true });
-        navigate({ to: redirectTo });
-      }, 3200);
+      track("onboarding_splash_view", { redirect: target, preview: true, source: resolved.source });
       setHydrated(true);
       return;
     }
     if (search.preview === "deeplink") {
       setShowDeepPrompt(true);
-      track("onboarding_deeplink_prompt_view", { redirect: redirectTo, preview: true });
+      track("onboarding_deeplink_prompt_view", { redirect: target, preview: true, source: resolved.source });
       setHydrated(true);
       return;
     }
@@ -242,11 +215,7 @@ function OnboardingPage() {
       if (saved.completed && !forceOnboarding) {
         // Returning user → brief splash, then straight into app / deep link.
         setShowSplash(true);
-        track("onboarding_splash_view", { redirect: redirectTo });
-        window.setTimeout(() => {
-          track("onboarding_splash_autoenter", { redirect: redirectTo });
-          navigate({ to: redirectTo });
-        }, 3200);
+        track("onboarding_splash_view", { redirect: target, source: resolved.source });
         setHydrated(true);
         return;
       }
@@ -256,9 +225,9 @@ function OnboardingPage() {
     }
 
     // Deep link from product → give user choice to customize or skip onboarding.
-    if (search.redirect && !forceOnboarding) {
+    if (resolved.source !== "fallback" && !forceOnboarding) {
       setShowDeepPrompt(true);
-      track("onboarding_deeplink_prompt_view", { redirect: redirectTo });
+      track("onboarding_deeplink_prompt_view", { redirect: target, source: resolved.source });
     }
 
     setHydrated(true);
@@ -297,10 +266,10 @@ function OnboardingPage() {
 
 
   useEffect(() => {
-    const tg = getTg();
+    const tg = getTelegramMiniApp();
     if (!tg) return;
     try {
-      tg.ready(); tg.expand();
+      tg.ready?.(); tg.expand?.();
       tg.setHeaderColor?.("#0C0C0C"); tg.setBackgroundColor?.("#0C0C0C");
       if (tg.viewportStableHeight) setVh(tg.viewportStableHeight);
       const onVp = () => { if (tg.viewportStableHeight) setVh(tg.viewportStableHeight); };
@@ -319,7 +288,7 @@ function OnboardingPage() {
       const bottom = parseFloat(cs.paddingBottom) || 0;
       document.body.removeChild(probe);
       // Telegram already handles its own header — cap top inset so header text isn't pushed too far down.
-      const inTg = !!getTg();
+      const inTg = !!getTelegramMiniApp();
       setInsets({ top: inTg ? Math.min(top, 4) : top, bottom });
     };
     read();
@@ -371,8 +340,8 @@ function OnboardingPage() {
   const canBack = !(phase === "features" && slide === 0);
 
   useEffect(() => {
-    const tg = getTg();
-    if (!tg?.BackButton) return;
+    const tg = getTelegramMiniApp();
+    if (!tg?.BackButton || !isTelegramVersionAtLeast(tg, "6.1")) return;
     if (canBack) tg.BackButton.show(); else tg.BackButton.hide();
     tg.BackButton.onClick(goBack);
     return () => { tg.BackButton.offClick(goBack); };
@@ -384,6 +353,11 @@ function OnboardingPage() {
     ? (mc.getStarted ?? t.getStarted)
     : phase === "currency" ? (mc.finish ?? t.finish) : (mc.continue ?? t.continue);
 
+  const enterRedirect = useCallback(() => {
+    track("onboarding_splash_autoenter", { redirect: redirectTo });
+    navigate({ to: redirectTo });
+  }, [navigate, redirectTo]);
+
   // Splash for returning users (only 1st scene, no buttons, auto-exits).
   if (showSplash) {
     return (
@@ -391,7 +365,7 @@ function OnboardingPage() {
         minH={minH}
         insets={insets}
         title={t.features[0].title}
-        onDone={() => navigate({ to: redirectTo })}
+        onDone={enterRedirect}
       />
     );
   }
