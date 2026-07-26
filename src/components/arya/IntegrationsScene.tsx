@@ -61,21 +61,21 @@ export function IntegrationsScene() {
         <div className="flex flex-col justify-center">
           <div
             ref={hubRef}
-            className="z-10 grid place-items-center overflow-hidden rounded-3xl"
+            className="z-10 grid place-items-center overflow-hidden rounded-2xl"
             style={{
-              width: 88,
-              height: 88,
+              width: 60,
+              height: 60,
               border: "1px solid rgba(215,226,234,0.22)",
-              background: "#141414",
+              background: "linear-gradient(135deg,#18011F 0%,#7621B0 45%,#B600A8 100%)",
               boxShadow: "0 20px 40px -18px rgba(182,0,168,0.65), inset 0 1px 0 rgba(255,255,255,0.2)",
             }}
           >
-            <img
-              src="https://files.catbox.moe/ug9azb.jpg"
-              alt="Arya"
-              className="h-full w-full object-cover"
-              draggable={false}
-            />
+            <svg viewBox="0 0 32 32" width="34" height="34" aria-label="Arya" role="img">
+              <path
+                d="M16 5 L27 27 L21.5 27 L19.5 22.5 L12.5 22.5 L10.5 27 L5 27 Z M14.2 18 L17.8 18 L16 13.8 Z"
+                fill="#fff"
+              />
+            </svg>
           </div>
         </div>
 
