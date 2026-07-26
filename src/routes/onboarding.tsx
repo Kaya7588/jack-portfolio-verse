@@ -386,13 +386,20 @@ function OnboardingPage() {
 
   // Splash for returning users (only 1st scene, no buttons, auto-exits).
   if (showSplash) {
-    return <SplashScreen minH={minH} insets={insets} title={t.features[0].title} />;
+    return (
+      <ReturningUserSplash
+        minH={minH}
+        insets={insets}
+        title={t.features[0].title}
+        onDone={() => navigate({ to: redirectTo })}
+      />
+    );
   }
 
   // Deep-link prompt for new users arriving from a product deep link.
   if (showDeepPrompt) {
     return (
-      <DeeplinkPrompt
+      <DeepLinkOnboardingPrompt
         minH={minH}
         insets={insets}
         redirectTo={redirectTo}
