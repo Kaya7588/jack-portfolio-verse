@@ -76,6 +76,7 @@ export function WelcomeScene() {
 export { IntegrationsScene } from "./IntegrationsScene";
 import { IntegrationsScene } from "./IntegrationsScene";
 import SupportWall from "./SupportWall";
+import RunwayLoader from "./RunwayLoader";
 
 export function LegacyPaymentsScene() {
 
