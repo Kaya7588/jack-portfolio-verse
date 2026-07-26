@@ -306,4 +306,4 @@ export function LegacySupportScene() {
   );
 }
 
-export const SCENES = [WelcomeScene, IntegrationsScene, DeliveryScene, SupportWall];
+export const SCENES = [WelcomeScene, IntegrationsScene, RunwayLoader, SupportWall];
