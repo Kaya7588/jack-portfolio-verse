@@ -5,6 +5,14 @@ import { ArrowLeft, Check } from "lucide-react";
 import { DICTS, LANG_META, type LangId } from "@/lib/arya-i18n";
 import { SCENES } from "@/components/arya/Scenes";
 
+const PRELOAD_IMAGES = [
+  "/__l5e/assets-v1/29f3c4fe-bf8b-493c-a3ac-f03a9cc93263/file_0000000013e8820ea802a31d37cc1fdd.png",
+  "/__l5e/assets-v1/4821ebec-3f9a-4937-bcfe-dc0dfa28a525/file_0000000048cc820e8a94aedec056054e.png",
+  "/__l5e/assets-v1/b70f5ad1-da5b-4066-b37e-342544986365/file_0000000058b0820ea51cc5676deeb054.png",
+  "/__l5e/assets-v1/37b3db3d-8cbe-4c80-aa24-46d1454c52e6/file_00000000668081fa889e387e93654005.png",
+  "/__l5e/assets-v1/5fb83197-eca1-4f25-b65b-8ab0ad9ff77d/file_0000000068f8820ea8d1533bc9efcc8c.png",
+];
+
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
@@ -15,6 +23,7 @@ export const Route = createFileRoute("/onboarding")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: PRELOAD_IMAGES.map((href) => ({ rel: "preload", as: "image", href, fetchpriority: "high" })),
   }),
   component: OnboardingPage,
 });
@@ -252,9 +261,9 @@ function OnboardingPage() {
     <motion.div
       animate={exiting ? { opacity: 0, scale: 0.985, filter: "blur(6px)" } : { opacity: 1, scale: 1, filter: "blur(0px)" }}
       transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
-      className="relative w-full flex justify-center"
+      className="relative w-full flex justify-center overflow-hidden"
       style={{
-        minHeight: minH,
+        height: minH,
         background: "#0C0C0C",
         fontFamily: "'Kanit', 'Noto Sans Devanagari', sans-serif",
         color: "#D7E2EA",
@@ -262,7 +271,7 @@ function OnboardingPage() {
         paddingBottom: insets.bottom,
       }}
     >
-      <div className="relative w-full max-w-[440px] flex flex-col px-6 pt-3 pb-6" style={{ overflowX: "clip", minHeight: `calc(${minH} - ${insets.top + insets.bottom}px)` }}>
+      <div className="relative w-full max-w-[440px] flex flex-col px-6 pt-3 pb-6" style={{ overflowX: "clip", height: `calc(${minH} - ${insets.top + insets.bottom}px)` }}>
         {/* Top bar — back only */}
         <div className="flex items-center justify-between h-9 shrink-0 relative z-20">
           <button
